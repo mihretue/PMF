@@ -164,14 +164,14 @@ export default function SignUpForm() {
                 border: "1px solid #93c5fd",
                 paddingLeft: "48px",
                 paddingRight: "0.75rem",
-                backgroundColor: "#fff",
+                backgroundColor: "rgba(243, 244, 246, 0.8)",
                 color: "#111827",
               }}
               containerStyle={{ width: "100%" }}
               buttonStyle={{
-                border: "none",
+                border: "1px solid #93c5fd",
                 backgroundColor: "#fff",
-                paddingLeft: "0.75rem",
+                // paddingLeft: "0.2rem",
                 paddingRight: "0.5rem",
               }}
               dropdownStyle={{
