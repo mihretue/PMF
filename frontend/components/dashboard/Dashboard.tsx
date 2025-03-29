@@ -2,20 +2,13 @@
 
 import { useState } from "react"
 import {
-  Search,
-  Bell,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  LayoutDashboard,
-  ArrowLeftRight,
-  MessageSquare,
-  User,
-  Settings,
-  HelpCircle,
-  LogOut,
+
 } from "lucide-react"
-import Link from "next/link"
+import StatsCards from "./StatsCards"
+
 
 // Sample transaction data
 const transactionsData = [
@@ -63,9 +56,8 @@ export default function Dashboard() {
        
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-semibold">Home</h1>
+        <main className="flex-1 overflow-y-auto ">
+          <div className="flex items-center md:justify-end justify-start mb-10">
             <div className="flex space-x-3">
               <button className="px-4 py-2 bg-blue-600 text-white rounded-md">Foreign Currency</button>
               <button className="px-4 py-2 border border-blue-600 text-blue-600 rounded-md">Send Money</button>
@@ -73,7 +65,8 @@ export default function Dashboard() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
+          <StatsCards stats={{ failedTransactions: 100, failedTransactionsCount: 333, completedTransactions: 10, accountBalance: "1K", currency: "ETB" }} />
+          {/* <div className="grid grid-cols-4 gap-6 mb-8">
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="flex items-center mb-2">
                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mr-2">
@@ -132,7 +125,7 @@ export default function Dashboard() {
               <div className="text-2xl font-bold">60K ETB</div>
               <div className="text-sm">Account Balance</div>
             </div>
-          </div>
+          </div> */}
 
           {/* Transactions Table */}
           <div className="bg-white rounded-lg shadow">

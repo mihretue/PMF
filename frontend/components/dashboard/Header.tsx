@@ -109,6 +109,7 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
+    setNotifications(notifications)
   }, [])
 
   return (
