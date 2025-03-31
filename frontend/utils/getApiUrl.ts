@@ -1,6 +1,6 @@
 export const getApiUrl = () => {
     const API_URL =
-      "http://127.0.0.1:8000/api/";
+      "https://pmf-g5j1.onrender.com/api/";
     return API_URL;
   };
    

@@ -1,3 +1,7 @@
+import { getApiUrl } from "@/utils/getApiUrl";
+
+const API_URL = getApiUrl()
+
 const postHeader = (
     body: any,
     stringify: boolean = true,
@@ -17,5 +21,5 @@ const postHeader = (
 
 
   export const SignUp = (body : any)=>{
-    return fetch()
+    return fetch(`${API_URL}user/register/`, postHeader(body)).then((res)=>res.json())
   }
