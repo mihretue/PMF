@@ -9,6 +9,7 @@ import StatsCards from "./StatsCards";
 import TransactionDetailModal from "./TransactionDetailModal";
 import { Transaction } from "./TransactionDetailModal";
 import StatusButtonSmall from "../common/StatusButtonSmall";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | undefined>();
@@ -163,20 +164,90 @@ export default function Dashboard() {
       status: "Pending",
       description: "Donation",
     },
+    {
+      id: 6,
+      date: "2023-10-01",
+      amount: 100.5,
+      status: "Completed",
+      description: "Payment for invoice #123",
+    },
+    {
+      id: 7,
+      date: "2023-10-02",
+      amount: 75.25,
+      status: "Pending",
+      description: "Subscription renewal",
+    },
+    {
+      id: 8,
+      date: "2023-10-03",
+      amount: 150.0,
+      status: "Failed",
+      description: "Refund processing",
+    },
+    {
+      id: 9,
+      date: "2023-10-04",
+      amount: 200.75,
+      status: "Completed",
+      description: "Service fee",
+    },
+    {
+      id: 10,
+      date: "2023-10-05",
+      amount: 50.0,
+      status: "Pending",
+      description: "Donation",
+    },
+    {
+      id: 11,
+      date: "2023-10-01",
+      amount: 100.5,
+      status: "Completed",
+      description: "Payment for invoice #123",
+    },
+    {
+      id: 12,
+      date: "2023-10-02",
+      amount: 75.25,
+      status: "Pending",
+      description: "Subscription renewal",
+    },
+    {
+      id: 13,
+      date: "2023-10-03",
+      amount: 150.0,
+      status: "Failed",
+      description: "Refund processing",
+    },
+    {
+      id: 14,
+      date: "2023-10-04",
+      amount: 200.75,
+      status: "Completed",
+      description: "Service fee",
+    },
+    {
+      id: 15,
+      date: "2023-10-05",
+      amount: 50.0,
+      status: "Pending",
+      description: "Donation",
+    },
   ];
 
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1">
           <div className="flex items-center md:justify-end justify-start mb-10">
             <div className="flex space-x-3">
-              <button className="px-4 py-2 bg-[#3682AF] text-white rounded-md">
+              <Link href={"/admin/transactions/foreign-currency"} className="px-4 py-2 bg-[#3682AF] text-white rounded-md">
                 Foreign Currency
-              </button>
-              <button className="px-4 py-2 border border-[#3682AF] text-[#3682AF] rounded-md">
+              </Link>
+              <Link href={"/admin/transactions/send-money"} className="px-4 py-2 border border-[#3682AF] text-[#3682AF] rounded-md">
                 Send Money
-              </button>
+              </Link>
             </div>
           </div>
 
