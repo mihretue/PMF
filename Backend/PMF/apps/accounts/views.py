@@ -20,6 +20,8 @@ from django.core.cache import cache
 import logging
 User = get_user_model()
 
+logger = logging.getLogger(__name__)
+
 # Registration view to create a user
 # class RegisterView(generics.CreateAPIView):
 #     queryset = User.objects.all()
