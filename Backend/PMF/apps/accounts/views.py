@@ -17,29 +17,64 @@ from twilio.rest import Client
 import hashlib
 import requests
 from django.core.cache import cache
-
+import logging
 User = get_user_model()
 
 # Registration view to create a user
+# class RegisterView(generics.CreateAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = RegisterSerializer
+#     permission_classes = [permissions.AllowAny]
+
+#     def create(self, request, *args, **kwargs):
+#         response = super().create(request, *args, **kwargs)
+#         # Fetch the user object using the email provided in the request
+#         user = User.objects.get(email=request.data["email"])
+
+#         # Create JWT tokens (access and refresh)
+#         refresh = RefreshToken.for_user(user)
+
+#         # You can return both the access and refresh tokens
+#         return Response({
+#             "access_token": str(refresh.access_token),
+#             "refresh_token": str(refresh),
+#         }, status=status.HTTP_201_CREATED)
+ 
+ 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        # Fetch the user object using the email provided in the request
-        user = User.objects.get(email=request.data["email"])
+        # Log the incoming payload
+        logger.debug(f"Received payload: {request.data}")
 
-        # Create JWT tokens (access and refresh)
-        refresh = RefreshToken.for_user(user)
+        try:
+            # Call the parent create method, which handles serialization and validation
+            response = super().create(request, *args, **kwargs)
+            # Fetch the user object using the email provided in the request
+            user = User.objects.get(email=request.data["email"])
 
-        # You can return both the access and refresh tokens
-        return Response({
-            "access_token": str(refresh.access_token),
-            "refresh_token": str(refresh),
-        }, status=status.HTTP_201_CREATED)
-        
+            # Create JWT tokens (access and refresh)
+            refresh = RefreshToken.for_user(user)
+
+            # Log successful registration
+            logger.info(f"User registered successfully: {user.email}")
+
+            # Return tokens in the response
+            return Response({
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh),
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # Log the error and payload for debugging
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid()  # Run validation to get errors
+            logger.error(f"Registration failed: {str(e)} | Validation errors: {serializer.errors} | Payload: {request.data}")
+            # Re-raise the exception to let DRF handle the response
+            raise       
 # Login view supporting both JWT and OAuth2 Authentication
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
