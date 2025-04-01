@@ -105,6 +105,7 @@ SIMPLE_JWT = {
 
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -203,3 +204,7 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # settings.py
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development purposes
