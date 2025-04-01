@@ -9,7 +9,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { AUTH } from "@/app/api/endpoints";
 import NotificationContext from "@/context/NotificationContext";
-
+import {SignUp} from "@/app/services/services";
 interface UserRegistrationForm {
   firstName: string;
   lastName: string;
@@ -108,13 +108,9 @@ export default function SignUpForm() {
     };
 
     try {
-      const response = await fetch(AUTH.REGISTER, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(apiData),
-      });
+      const response = await SignUp(apiData);
 
-      const data = await response.json();
+    
 
       if (response.ok) {
         notificationCtx.showNotification({

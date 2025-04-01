@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'oauth2_provider',  
     'rest_framework_simplejwt', 
     "django_celery_beat",
+    'corsheaders',
     
     # apps
     'apps.accounts',
