@@ -24,3 +24,47 @@ body {
   color: var(--foreground);
   font-family: 'Montserrat';
 }
+
+.Toastify__toast-container {
+  /* background-color: #fff; */
+  max-width: 400px;
+  width: calc(100vw - 10px);
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.Toastify__toast {
+  /* background-color: #fffffff0 !important; */
+  padding: 20px;
+  /* border: 1px solid #30479c; */
+  border-radius: 8px;
+}
+
+.Toastify__toast > * {
+  font-family: '__Montserrat_d5181b', '__Montserrat_Fallback_d5181b', Helvetica, Arial, sans-serif;
+  color: var(--accent-3);
+  font-weight: 500;
+}
+
+.Toastify__close-button > * {
+  color: var(--accent-3)
+}
+
+.Toastify__toast--success > * {
+  color: #28a745 !important;
+}
+
+.Toastify__toast--success {
+  border-left: 8px solid #28a745;
+  background-color: #e6f4ea;
+}
+
+
+.Toastify__toast--error {
+  border-left: 8px solid #dc3545;
+  background-color: #f8d7da;
+}
+
+.Toastify__toast--error > * {
+  color: #dc3545 !important;
+}
