@@ -3,7 +3,7 @@ const BASE_URL = "https://pmf-g5j1.onrender.com"
 
 
 export const AUTH = {
-    LOGIN: `${BASE_URL}/auth/login/`,
+    LOGIN: `${BASE_URL}/api/user/login/`,
     REGISTER: `${BASE_URL}/api/user/register/`,
     LOGOUT: `${BASE_URL}/auth/logout/`,
     VERIFY_2FA: `${BASE_URL}/auth/verify-2fa/`,
