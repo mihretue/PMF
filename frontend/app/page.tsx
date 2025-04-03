@@ -44,37 +44,32 @@ export default function Home() {
        <Header/>
        <Hero/>
       
-
       {/* Partner */}
       <Partners/>
      
-
       {/* About Fees */}
       <About/>
 
-        {/* Finance Services */}
-        <Services/>
-       
+      {/* Finance Services */}
+      <Services/>
 
-        {/* Stats Cards */}
-        <StatsCard/>
+      {/* Stats Cards */}
+      <StatsCard/>
 
-        {/* Clients */}
-        <Clients/>
-       
+      {/* Clients */}
+      <Clients/>
+      
+      {/* Contact Us */}
+      <Contact/>
 
-        {/* Contact Us */}
-       <Contact/>
+      {/* Social Media */}
+      <SocialMedias/>
+      
+      {/* Free Consultation */}
+      <Consultation/>
 
-        {/* Social Media */}
-        <SocialMedias/>
-       
-
-        {/* Free Consultation */}
-        <Consultation/>
-
-         {/* Footer */}
-        <Footer/>
+      {/* Footer */}
+      <Footer/>
         
        
     </Box>
