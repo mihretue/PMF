@@ -92,7 +92,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     },
     { icon: <ArrowLeftRight size={20} />, text: "Exchange rate", href: "/exchange-rate" },
     { icon: <MessageSquare size={20} />, text: "Messages", href: "/messages" },
-    { icon: <User size={20} />, text: "Profile", href: "/profile" },
+    // { icon: <User size={20} />, text: "Profile", href: "/profile" },
+    {
+      icon: <User size={20} />,
+      text: "Profile",
+      href: "/admin/profile",
+      subItems: [
+        { text: "KYC", href: "/admin/profile/kyc" },
+        // { text: "Send money", href: "/admin/transactions/send-money" },
+      ],
+    },
     { icon: <Settings size={20} />, text: "Settings", href: "/settings" },
     { icon: <HelpCircle size={20} />, text: "Help Center", href: "/help" },
     { icon: <LogOut size={20} />, text: "Logout", href: "/logout" },
