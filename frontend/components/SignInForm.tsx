@@ -58,7 +58,7 @@ export default function SignInForm() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-center w-full max-w-5xl">
+    <div className="flex flex-col md:flex-row items-center w-full max-w-5xl ">
       {/* Left side illustration */}
       <div className="w-full md:w-1/2 p-6 flex justify-center">
         <div className="max-w-xs">
@@ -73,7 +73,7 @@ export default function SignInForm() {
       </div>
 
       {/* Right side form */}
-      <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg">
+      <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg shadow-lg">
         <h1 className="text-2xl font-semibold text-center mb-6">Sign In</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -121,7 +121,7 @@ export default function SignInForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 flex items-center justify-center mt-4"
+            className=" bg-[#3682AF] w-full text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 flex items-center justify-center mt-4"
           >
             <span>{isLoading ? "Signing in..." : "Sign in"}</span>
             {!isLoading && <ArrowRight className="ml-2" size={18} />}
@@ -187,7 +187,7 @@ export default function SignInForm() {
         <div className="mt-[20px] text-center text-sm">
           <p>
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-blue-600 hover:underline">
+            <Link href="/registration" className="text-blue-600 hover:underline">
               Sign up
             </Link>
           </p>

@@ -167,15 +167,15 @@ export default function SignUpForm() {
           <Image
             src="/signup.webp"
             alt="Security illustration"
-            width={300}
-            height={300}
+            width={700}
+            height={500}
             className="object-contain"
             priority
           />
         </div>
       </div>
 
-      <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg">
+      <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg  shadow-lg">
         <h1 className="text-2xl font-semibold text-center mb-6">Sign Up</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -378,7 +378,7 @@ export default function SignUpForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full  bg-[#3682AF] text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
