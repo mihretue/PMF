@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 // import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Home } from 'lucide-react'
+// import Link from "next/link"
+// import { Home } from 'lucide-react'
 import KYCProgressTracker from "@/components/kyc/KYCProgressTracker"
 import PersonalInformationStep from "@/components/kyc/PersonalInformationStep"
-import IDCardFrontStep from "@/components/kyc/IdCardFrontStep"
-import IDCardBackStep from "@/components/kyc/IdCardBackStep"
+import IDCardFrontStep from "@/components/kyc/IDCardFrontStep"
+import IDCardBackStep from "@/components/kyc/IDCardBackStep"
 import UserPhotoStep from "@/components/kyc/UserPhotoStep"
-import KYCCompletedStep from "@/components/kyc/KycCompletedStep"
+import KYCCompletedStep from "@/components/kyc/KYCCompletedStep"
 import NotVerifiedBanner from "@/components/kyc/NotVerifiedBanner"
 
 // Define the steps in the KYC process
@@ -151,19 +151,6 @@ export default function kyc() {
       {/* Main content */}
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <div className="flex items-center text-sm mb-6">
-          <Link href="/home" className="text-blue-500 hover:underline flex items-center">
-            <Home size={16} className="mr-1" />
-            Home
-          </Link>
-          <span className="mx-2">&gt;</span>
-          <Link href="/profile" className="text-blue-500 hover:underline">
-            Profile
-          </Link>
-          <span className="mx-2">&gt;</span>
-          <span className="text-gray-600">KY C</span>
-        </div>
-        
         {/* Progress tracker */}
         <KYCProgressTracker steps={KYC_STEPS} currentStep={currentStep} />
         
