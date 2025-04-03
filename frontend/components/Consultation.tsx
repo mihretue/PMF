@@ -12,22 +12,16 @@ import {
   TextareaAutosize,
 } from "@mui/material"
 
-import { ChevronRight } from "@mui/icons-material"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import Link from "next/link"
+
 import {
-  CheckCircle,
-  DollarSign,
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
+
   Mail,
   MapPin,
   Phone,
-  Send,
-  Twitter,
+ 
 } from "lucide-react"
 function Consultation() {
   return (
@@ -57,7 +51,7 @@ function Consultation() {
                   <TextareaAutosize
                     minRows={3}
                     placeholder="Message"
-                    style={{ width: '100%' ,border:"1px solid lightgray" , margin:'5px 0px'}}
+                    style={{ width: '100%' ,border:"1px solid lightgray" , margin:'5px 0px' ,padding:'5px'}}
                   />
                   <Button className="w-full bg-teal-400 hover:bg-teal-500">Submit</Button>
                 </form>

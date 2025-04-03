@@ -18,21 +18,7 @@ import { ChevronRight } from "@mui/icons-material"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import {
-  CheckCircle,
-  DollarSign,
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Send,
-  Twitter,
-} from "lucide-react"
-import Image from "next/image"
-import Header from "@/components/Header"
+
 
 // Custom styled components
 const GradientText = styled(Typography)(({ theme }) => ({
@@ -132,9 +118,9 @@ function Hero() {
                 },
                 fontFamily: 'Montserrat',
                 fontStyle: "normal",
-                fontWeight: "500",
+                fontWeight: "540",
                
-                lineHeight: "82px",
+                lineHeight: "72px",
                 letterSpacing: "-3px",
               }}
             >
@@ -159,7 +145,7 @@ function Hero() {
 
           {/* Currency Converter Card */}
           <ConverterWrapper >
-            <CurrencyCard sx={{ bgcolor: "rgba(154, 194, 215, 0.62)" ,fontFamily: 'Montserrat',marginTop:'50px' }} >
+            <CurrencyCard sx={{ bgcolor: "rgba(154, 194, 215, 0.49)" ,fontFamily: 'Montserrat',marginTop:'50px' }} >
               <Stack spacing={3}>
                 <Box>
                   <Typography variant="body1" fontWeight="medium" mb={1} fontFamily= 'Montserrat'>
