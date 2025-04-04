@@ -23,14 +23,17 @@ export default function Header() {
           sx={{
             py: 2,
             px:6,
-            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.08)",
+            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
             position: "fixed",
             top: 0,
             left: 0,
             width: "100%",
             backgroundColor: "white",
             zIndex: 1000,
-          }}
+            
+          }} 
+       
+
         >
           {/* Add padding inside the Box instead */}
           <Box

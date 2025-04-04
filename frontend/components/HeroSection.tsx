@@ -102,7 +102,7 @@ function Hero() {
   return (
     <div>
         {/* Hero Section - Now with flex layout */}
-      <Container sx={{ py: 6, display: "flex" , mt:5}}>
+      <Container  disableGutters   sx={{ py: 6, display: "flex" , mt:5,px:0}}>
         <HeroSection>
           <HeroContent>
             <GradientText
