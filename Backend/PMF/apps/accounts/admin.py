@@ -27,8 +27,8 @@ class CustomUserAdmin(BaseUserAdmin):
     )
 
 
-# @admin.register(OTP)
-# class OTPAdmin(admin.ModelAdmin):
-#     list_display = ('user', 'code', 'created_at', 'expires_at', 'is_used')
-#     search_fields = ('user__email',)
-#     readonly_fields = ('created_at', 'expires_at', 'code')
+@admin.register(OTP)
+class OTPAdmin(admin.ModelAdmin):
+    list_display = ('user', 'code', 'created_at', 'expires_at', 'is_used')
+    search_fields = ('user__email',)
+    readonly_fields = ('created_at', 'expires_at', 'code')
