@@ -218,7 +218,7 @@ class GenerateOTPView(APIView):
         hashed_otp = hashlib.sha256(otp.encode()).hexdigest()
 
         # Save OTP
-        OTP.objects.create(user=user, code=hashed_otp, expires_at=now() + timezone.timedelta(minutes=5))
+        OTP.objects.create(user=user, code=hashed_otp, expires_at=now() + timedelta(minutes=5))
 
         # Create message
         message = f"Your OTP is {otp}. It expires in 5 minutes."
