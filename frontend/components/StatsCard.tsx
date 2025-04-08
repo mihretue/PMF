@@ -4,7 +4,7 @@ function StatsCard() {
   return (
     <div>
             <section className="py-16">
-          <div className="container mx-auto px-4">
+          <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="flex justify-end lg:h-[340px]">
             <div className="bg-gradient-to-r from-teal-100 to-teal-200 p-6 flex flex-col justify-end h-full">

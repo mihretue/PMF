@@ -17,7 +17,7 @@ function Clients() {
   return (
     <div>
          <section className="py-16">
-                  <div className="container mx-auto px-4">
+                  <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4 ">
                     <h2 className="mb-12 text-center text-3xl font-bold">Our Clients</h2>
                     <div className="mb-8 flex flex-wrap items-center justify-center gap-8">
                       <div className="flex items-center text-gray-500">

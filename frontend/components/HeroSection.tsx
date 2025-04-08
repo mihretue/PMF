@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Box,
   Container,
@@ -11,14 +11,12 @@ import {
   useMediaQuery,
   useTheme,
   styled,
-  TextareaAutosize,
-} from "@mui/material"
-import Grid from "@mui/material/Grid"
-import { ChevronRight } from "@mui/icons-material"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
-
+  Grid,
+} from "@mui/material";
+import { ChevronRight } from "@mui/icons-material";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 // Custom styled components
 const GradientText = styled(Typography)(({ theme }) => ({
@@ -27,34 +25,7 @@ const GradientText = styled(Typography)(({ theme }) => ({
   WebkitTextFillColor: "transparent",
   backgroundClip: "text",
   color: "transparent",
-}))
-
-const FooterGradient = styled(Box)(({ theme }) => ({
-  // background: "linear-gradient(270deg,  rgba(54, 130, 175, 0.5) 0% , rgba(0, 250, 145, 0.5) 100%)",
-  backgroundColor:"#F3F4F6",
-  padding: theme.spacing(6, 0),
-}))
-
-const LogoCircle = styled(Box)(({ theme }) => ({
-  width: 40,
-  height: 40,
-  borderRadius: "50%",
-  border: `2px solid ${theme.palette.primary.main}`,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: theme.palette.primary.main,
-}))
-
-const CurrencyCard = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.secondary.main,
-  borderRadius: 16,
-  padding: theme.spacing(3),
-  boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-}))
+}));
 
 const FlagIcon = styled(Box)(({ theme }) => ({
   width: 24,
@@ -65,7 +36,7 @@ const FlagIcon = styled(Box)(({ theme }) => ({
   alignItems: "center",
   justifyContent: "center",
   marginRight: theme.spacing(1),
-}))
+}));
 
 const HeroSection = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -76,34 +47,56 @@ const HeroSection = styled(Box)(({ theme }) => ({
   },
   gap: theme.spacing(6),
   width: "100%",
-}))
+}));
 
 const HeroContent = styled(Box)(({ theme }) => ({
-
-
-
   flex: 1,
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
-}))
+  alignItems: "center", // Center horizontally
+  textAlign: "center", // Align text center on small screens
+  [theme.breakpoints.up("md")]: {
+    alignItems: "flex-start",
+    textAlign: "left",
+  },
+  padding: theme.spacing(2), // Add responsive padding
+}));
 
 const ConverterWrapper = styled(Box)(({ theme }) => ({
   flex: 1,
   width: "100%",
-}))
+}));
 
+const CurrencyCard = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.secondary.main,
+  borderRadius: 16,
+  padding: theme.spacing(3),
+  boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+}));
 
 function Hero() {
-      const [sendAmount, setSendAmount] = useState("1,000")
-      const [receiveAmount, setReceiveAmount] = useState("131,449.00")
-      const theme = useTheme()
-      const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  const [sendAmount, setSendAmount] = useState("1,000");
+  const [receiveAmount, setReceiveAmount] = useState("131,449.00");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
-    <div>
-        {/* Hero Section - Now with flex layout */}
-      <Container  disableGutters   sx={{ py: 6, display: "flex" , mt:5,px:0}}>
+    <div id="home" >
+      <Container
+        disableGutters
+        sx={{
+          py: 4,
+          px: 2,
+          mt: 4,
+          display: "flex",
+        }}
+      >
         <HeroSection>
+          {/* Hero Content */}
           <HeroContent>
             <GradientText
               variant={isMobile ? "h4" : "h3"}
@@ -116,16 +109,26 @@ function Hero() {
                   md: "3.5rem",
                   lg: "62px",
                 },
-                fontFamily: 'Montserrat',
+                fontFamily: "Montserrat",
                 fontStyle: "normal",
-                fontWeight: "540",
-               
-                lineHeight: "72px",
-                letterSpacing: "-3px",
+                fontWeight: 540,
+                lineHeight: {
+                  xs: "50px",  
+                  sm: "60px",
+                  md: "72px",
+                },
+            
+                letterSpacing: {
+                  xs: "-1px",  
+                  sm: "-2px",
+                  md: "-3px",
+                },
+                
               }}
             >
               PROUDLY CONNECTING ETHIOPIA TO THE WORLD
             </GradientText>
+
             <Typography
               variant="body1"
               mb={4}
@@ -133,13 +136,16 @@ function Hero() {
               sx={{
                 maxWidth: "500px",
                 fontSize: { xs: "1rem", md: "1.1rem" },
-                fontFamily: 'Montserrat',
+                fontFamily: "Montserrat",
               }}
             >
               Experience fast and efficient currency services customized to your needs. Join us today!
             </Typography>
+
             <Box>
-              <Link href={"/login"}><Button size={isMobile ? "medium" : "large"}>Get Started</Button></Link>
+              <Link href="/login">
+                <Button size={isMobile ? "medium" : "large"}>Get Started</Button>
+              </Link>
             </Box>
           </HeroContent>
 
