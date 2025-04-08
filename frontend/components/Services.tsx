@@ -36,8 +36,8 @@ import Image from "next/image"
 function Services() {
   return (
     <div>
-         <section className="py-16">
-          <div className="container mx-auto px-4">
+         <section id="services"  className="py-16">
+          <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4">
             <h2 className="mb-12 text-center text-3xl font-bold">Our Finance Services</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
               <div className="lg:h-[200px] p-6  bg-gradient-to-r from-[rgba(0,250,145,0.5)] to-[rgba(54,130,175,0.5)] " >
@@ -65,7 +65,7 @@ function Services() {
 
         {/* Key Features */}
         <section className="py-16">
-          <div className="container mx-auto px-4">
+          <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4">
             <div className="grid gap-8 md:grid-cols-2">
               <div>
                 <h2 className="mb-4 text-3xl font-bold">

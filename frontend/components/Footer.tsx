@@ -18,7 +18,7 @@ function Footer() {
   return (
     <div>
          <footer className="border-t bg-white py-8">
-        <div className="container mx-auto px-4">
+        <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="text-sm text-gray-500">© {new Date().getFullYear()} All rights reserved</div>
             <div className="flex space-x-4">
