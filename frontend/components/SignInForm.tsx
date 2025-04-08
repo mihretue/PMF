@@ -1,66 +1,72 @@
-"use client";
+"use client"
 
-import { useState, useContext } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, ArrowRight } from "lucide-react";
-import NotificationContext from "@/context/NotificationContext";
-import { AUTH } from "@/app/api/endpoints"; // Update to your actual path
+import type React from "react"
+
+import { useState, useContext } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Eye, EyeOff, ArrowRight } from "lucide-react"
+import NotificationContext from "@/context/NotificationContext"
+import { AUTH } from "@/app/api/endpoints" // Update to your actual path
 
 export default function SignInForm() {
-  const router = useRouter();
-  const notificationCtx = useContext(NotificationContext);
+  const router = useRouter()
+  const notificationCtx = useContext(NotificationContext)
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     // rememberMe: false,
-  });
+  })
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [verificationNeeded, setVerificationNeeded] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
-    }));
+    }))
     if (errors[name]) {
       setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
     }
-  };
+
+    // Reset verification needed state when email changes
+    if (name === "email" && verificationNeeded) {
+      setVerificationNeeded(false)
+    }
+  }
 
   const validate = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: { [key: string]: string } = {}
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required.";
+      newErrors.email = "Email is required."
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Enter a valid email address.";
+      newErrors.email = "Enter a valid email address."
     }
-    if (!formData.password) newErrors.password = "Password is required.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    if (!formData.password) newErrors.password = "Password is required."
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setIsLoading(true);
+    e.preventDefault()
+    if (!validate()) return
+    setIsLoading(true)
 
     const loginData = {
       email: formData.email,
       password: formData.password,
       // auth_type: "JWT", // ✅ append this field
-    };
-
-    // console.log("Data to be sent:", loginData);
+    }
 
     try {
       const response = await fetch(AUTH.LOGIN, {
@@ -70,59 +76,83 @@ export default function SignInForm() {
           Authorization: "JWT", // 👈 this is the key fix
         },
         body: JSON.stringify(loginData),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok) {
-        const token = data.token || data.access; // Depending on backend format
+        const token = data.token || data.access // Depending on backend format
 
         // Store token in localStorage or cookie
-        localStorage.setItem("auth_token", token);
+        localStorage.setItem("auth_token", token)
 
         notificationCtx.showNotification({
           status: "success",
           message: "Logged in successfully!",
-        });
+        })
 
         // Optional: Save token, redirect, etc.
-        setTimeout(() => router.push("/admin/dashboard"), 1500);
+        setTimeout(() => router.push("/admin/dashboard"), 1500)
       } else {
-        notificationCtx.showNotification({
-          status: "error",
-          message:
-            data.detail || "Login failed. Please check your credentials.",
-        });
+        // Check if the error is due to unverified account
+        if (
+          data.detail &&
+          (data.detail.includes("verify") ||
+            data.detail.includes("verification") ||
+            data.detail.includes("unverified") ||
+            data.detail.includes("not verified"))
+        ) {
+          setVerificationNeeded(true)
+
+          // Generate a new OTP for the user
+          try {
+            await fetch(AUTH.GENERATE_OTP, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                subject: "Your OTP Code",
+                email: formData.email,
+              }),
+            })
+          } catch (error) {
+            console.error("Error generating OTP:", error)
+          }
+
+          notificationCtx.showNotification({
+            status: "warning",
+            message: "Please verify your email before logging in.",
+          })
+        } else {
+          notificationCtx.showNotification({
+            status: "error",
+            message: data.detail || "Login failed. Please check your credentials.",
+          })
+        }
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error:", error)
       notificationCtx.showNotification({
         status: "error",
         message: "Network error. Please try again.",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleGoogleSignIn = () => {
     notificationCtx.showNotification({
       status: "info",
       message: "Google login not implemented yet.",
-    });
-  };
+    })
+  }
 
   return (
     <div className="flex flex-col md:flex-row items-center w-full max-w-5xl">
       <div className="w-full md:w-1/2 p-6 flex justify-center">
-        <Image
-          src="/login.png"
-          alt="Login illustration"
-          width={300}
-          height={300}
-          className="object-contain"
-          priority
-        />
+        <Image src="/login.png" alt="Login illustration" width={300} height={300} className="object-contain" priority />
       </div>
 
       <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg">
@@ -142,21 +172,14 @@ export default function SignInForm() {
               onChange={handleChange}
               disabled={isLoading}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
-                errors.email
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-blue-300 focus:ring-blue-500"
+                errors.email ? "border-red-500 focus:ring-red-500" : "border-blue-300 focus:ring-blue-500"
               }`}
             />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-            )}
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-1"
-            >
+            <label htmlFor="password" className="block text-sm font-medium mb-1">
               Password
             </label>
             <div className="relative">
@@ -169,9 +192,7 @@ export default function SignInForm() {
                 onChange={handleChange}
                 disabled={isLoading}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
-                  errors.password
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-blue-300 focus:ring-blue-500"
+                  errors.password ? "border-red-500 focus:ring-red-500" : "border-blue-300 focus:ring-blue-500"
                 }`}
               />
               <button
@@ -182,10 +203,26 @@ export default function SignInForm() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-            )}
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
           </div>
+
+          {verificationNeeded && (
+            <div
+              className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
+              <p className="font-medium">Your account needs verification</p>
+              <p className="text-sm mt-1">Please verify your email before logging in.</p>
+              <div className="mt-2">
+                <Link
+                  href={`/verify-otp?email=${encodeURIComponent(formData.email)}`}
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Verify your email now
+                </Link>
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -200,14 +237,7 @@ export default function SignInForm() {
                   fill="none"
                   viewBox="0 0 24 24"
                 >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path
                     className="opacity-75"
                     fill="currentColor"
@@ -237,10 +267,7 @@ export default function SignInForm() {
                 Remember me
               </label>
             </div>
-            <Link
-              href="/forgot-password"
-              className="text-sm text-blue-600 hover:underline"
-            >
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
               Forgot Password?
             </Link>
           </div>
@@ -260,12 +287,7 @@ export default function SignInForm() {
           onClick={handleGoogleSignIn}
           className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -296,5 +318,6 @@ export default function SignInForm() {
         </div>
       </div>
     </div>
-  );
+  )
 }
+

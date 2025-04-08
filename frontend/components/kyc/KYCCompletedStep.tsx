@@ -1,5 +1,6 @@
 import { CheckCircle } from "lucide-react"
 import Link from "next/link"
+// import Image from "next/image"
 
 export default function KYCCompletedStep() {
   return (
@@ -7,6 +8,7 @@ export default function KYCCompletedStep() {
       <div className="flex justify-center mb-6">
         <div className="bg-blue-500 rounded-full p-6">
           <CheckCircle className="text-white" size={40} />
+          {/* <Image src="/completed.png" alt="Check" width={40} height={40} /> */}
         </div>
       </div>
 

@@ -1,11 +1,11 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef } from "react"
+import React, { useState, useRef } from "react"
 import Image from "next/image"
 import { Upload, X } from "lucide-react"
 import type { KYCFormData } from "@/app/admin/profile/kyc/page"
+import Select from "react-select"
+import { FormControl, FormHelperText } from "@mui/material"
 
 interface IDCardFrontStepProps {
   formData: KYCFormData
@@ -14,11 +14,24 @@ interface IDCardFrontStepProps {
   onPrevious: () => void
 }
 
+type IDTypeOption = {
+  value: string
+  label: string
+}
+
 export default function IDCardFrontStep({ formData, updateFormData, onNext, onPrevious }: IDCardFrontStepProps) {
   const [dragActive, setDragActive] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const idTypeOptions: IDTypeOption[] = [
+    { value: "passport", label: "Passport" },
+    { value: "nationalId", label: "National ID" },
+    { value: "driverLicense", label: "Driver License" },
+    { value: "bpp", label: "BPP" }
+  ]
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +87,9 @@ export default function IDCardFrontStep({ formData, updateFormData, onNext, onPr
 
   // Remove selected file
   const handleRemoveFile = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
     setPreviewUrl(null)
     updateFormData({ idFrontImage: null })
     if (fileInputRef.current) {
@@ -88,13 +104,21 @@ export default function IDCardFrontStep({ formData, updateFormData, onNext, onPr
 
   // Validate and proceed to next step
   const handleNext = () => {
-    if (!formData.idFrontImage) {
-      setError("Please upload the front of your ID card")
-      return
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.idType) {
+      newErrors.idType = "ID type is required"
     }
 
-    setError(null)
-    onNext()
+    if (!formData.idFrontImage) {
+      newErrors.idFrontImage = "Please upload the front of your ID card"
+    }
+
+    setErrors(newErrors)
+
+    if (Object.keys(newErrors).length === 0) {
+      onNext()
+    }
   }
 
   return (
@@ -107,27 +131,52 @@ export default function IDCardFrontStep({ formData, updateFormData, onNext, onPr
         <label htmlFor="idType" className="block text-sm font-medium mb-1">
           Select ID type
         </label>
-        <select
-          id="idType"
-          value={formData.idType}
-          onChange={(e) => updateFormData({ idType: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="" disabled>
-            Select
-          </option>
-          <option value="passport">Passport</option>
-          <option value="nationalId">National ID</option>
-          <option value="driverLicense">Driver License</option>
-          <option value="bpp">BPP</option>
-        </select>
+        <FormControl fullWidth error={!!errors.idType}>
+          <Select<IDTypeOption>
+            options={idTypeOptions}
+            onChange={(selected) =>
+              updateFormData({
+                idType: selected?.value || "",
+              })
+            }
+            value={idTypeOptions.find(option => option.value === formData.idType)}
+            isClearable
+            placeholder="Select the type of government issued file"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                height: "42px",
+                minHeight: "42px",
+                backgroundColor: "transparent",
+                borderColor: errors.idType ? "#ef4444" : "#d1d5db",
+                "&:hover": {
+                  borderColor: errors.idType ? "#ef4444" : "#3b82f6",
+                },
+              }),
+              valueContainer: (provided) => ({
+                ...provided,
+                height: "42px",
+                padding: "0 8px",
+              }),
+              menu: (provided) => ({
+                ...provided,
+                zIndex: 9999,
+              }),
+            }}
+          />
+          {errors.idType && (
+            <FormHelperText className="text-red-500 text-xs mt-1">
+              {errors.idType}
+            </FormHelperText>
+          )}
+        </FormControl>
       </div>
 
       {/* File Upload Area */}
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center ${
           dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-        } ${error ? "border-red-500" : ""}`}
+        } ${errors.idFrontImage ? "border-red-500" : ""}`}
         onDragOver={(e) => handleDrag(e, true)}
         onDragEnter={(e) => handleDrag(e, true)}
         onDragLeave={(e) => handleDrag(e, false)}
@@ -136,13 +185,14 @@ export default function IDCardFrontStep({ formData, updateFormData, onNext, onPr
         {previewUrl ? (
           <div className="relative">
             <Image
-              src={previewUrl || "/placeholder.svg"}
+              src={previewUrl}
               alt="ID Card Front"
               width={300}
               height={200}
               className="mx-auto object-contain max-h-48"
             />
             <button
+              type="button"
               onClick={handleRemoveFile}
               className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
             >
@@ -165,10 +215,21 @@ export default function IDCardFrontStep({ formData, updateFormData, onNext, onPr
           </div>
         )}
 
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+        <input 
+          ref={fileInputRef} 
+          type="file" 
+          accept="image/*" 
+          onChange={handleFileChange} 
+          className="hidden" 
+        />
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      {errors.idFrontImage && (
+        <p className="mt-2 text-sm text-red-500">{errors.idFrontImage}</p>
+      )}
+      {error && !errors.idFrontImage && (
+        <p className="mt-2 text-sm text-red-500">{error}</p>
+      )}
 
       {/* Progress indicator */}
       {previewUrl && (
@@ -201,4 +262,3 @@ export default function IDCardFrontStep({ formData, updateFormData, onNext, onPr
     </div>
   )
 }
-
