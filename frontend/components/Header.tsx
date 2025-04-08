@@ -132,13 +132,7 @@ export default function Header() {
                   </ListItem>
                 </Link>
               ))}
-              <ListItem>
-                <Link href="/login" passHref>
-                  <Button fullWidth variant="contained">
-                    Get Started
-                  </Button>
-                </Link>
-              </ListItem>
+              
             </List>
           </Box>
         </Drawer>
