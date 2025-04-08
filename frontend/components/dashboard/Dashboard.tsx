@@ -2,7 +2,7 @@
 
 import { Box, Button } from "@mui/material";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GridColDef, GridCellParams } from "@mui/x-data-grid";
 import Table from "../common/Table";
 import StatsCards from "./StatsCards";
@@ -10,10 +10,24 @@ import TransactionDetailModal from "./TransactionDetailModal";
 import { Transaction } from "./TransactionDetailModal";
 import StatusButtonSmall from "../common/StatusButtonSmall";
 import Link from "next/link";
+import EmptyStateMessage from "../common/EmptyStateMessage";
 
 export default function Dashboard() {
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | undefined>();
+  const [selectedTransaction, setSelectedTransaction] = useState<
+    Transaction | undefined
+  >();
   const [openModal, setOpenModal] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    // Simulate fetch call
+    setTimeout(() => {
+      setTransactions([]); // Replace with actual API data
+      setLoading(false);
+    }, 1000);
+  }, []);
 
   const handleRowClick = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
@@ -41,35 +55,29 @@ export default function Dashboard() {
       headerClassName: "custom-header",
       renderCell: (params: GridCellParams) => {
         const transactionStatus = params.value as string;
-
+        const colorMap: Record<string, string> = {
+          Completed: "#32CD32",
+          Pending: "#1E90FF",
+          Failed: "#A9A9A9",
+        };
+        const color = colorMap[transactionStatus] || "#A9A9A9";
         return (
-          <>
-            {transactionStatus === "Completed" && (
-              <StatusButtonSmall bgColor="#32CD32" text="Completed" />
-            )}
-            {transactionStatus === "Pending" && (
-              <StatusButtonSmall bgColor="#1E90FF" text="Pending" />
-            )}
-            {transactionStatus === "Failed" && (
-              <StatusButtonSmall bgColor="#A9A9A9" text="Failed" />
-            )}
-            {transactionStatus !== "Completed" &&
-              transactionStatus !== "Pending" &&
-              transactionStatus !== "Failed" && (
-                <StatusButtonSmall bgColor="#A9A9A9" text="Unknown" />
-              )}
-          </>
+          <StatusButtonSmall
+            bgColor={color}
+            text={transactionStatus || "Unknown"}
+          />
         );
       },
     },
-
     {
       field: "amount",
       headerName: "Amount",
       minWidth: 120,
       flex: 0.2,
       headerClassName: "custom-header",
-      renderCell: (params: GridCellParams<Transaction, Transaction["amount"]>) => (
+      renderCell: (
+        params: GridCellParams<Transaction, Transaction["amount"]>
+      ) => (
         <Box
           sx={{
             height: "100%",
@@ -95,7 +103,8 @@ export default function Dashboard() {
       minWidth: 120,
       flex: 0.2,
       headerClassName: "custom-header",
-      valueFormatter: (params) => new Date(params.value as string).toLocaleDateString(),
+      valueFormatter: (params) =>
+        new Date(params.value as string).toLocaleDateString(),
     },
     {
       field: "actions",
@@ -113,126 +122,18 @@ export default function Dashboard() {
             handleRowClick(params.row);
           }}
           sx={{
-            textTransform: 'none',
-            borderColor: '#3682AF',
-            color: '#3682AF',
-            '&:hover': {
-              borderColor: '#2a6f97',
-              backgroundColor: 'rgba(54, 130, 175, 0.04)'
-            }
+            textTransform: "none",
+            borderColor: "#3682AF",
+            color: "#3682AF",
+            "&:hover": {
+              borderColor: "#2a6f97",
+              backgroundColor: "rgba(54, 130, 175, 0.04)",
+            },
           }}
         >
           View Detail
         </Button>
       ),
-    },
-  ];
-
-  const transactions: Transaction[] = [
-    {
-      id: 1,
-      date: "2023-10-01",
-      amount: 100.5,
-      status: "Completed",
-      description: "Payment for invoice #123",
-    },
-    {
-      id: 2,
-      date: "2023-10-02",
-      amount: 75.25,
-      status: "Pending",
-      description: "Subscription renewal",
-    },
-    {
-      id: 3,
-      date: "2023-10-03",
-      amount: 150.0,
-      status: "Failed",
-      description: "Refund processing",
-    },
-    {
-      id: 4,
-      date: "2023-10-04",
-      amount: 200.75,
-      status: "Completed",
-      description: "Service fee",
-    },
-    {
-      id: 5,
-      date: "2023-10-05",
-      amount: 50.0,
-      status: "Pending",
-      description: "Donation",
-    },
-    {
-      id: 6,
-      date: "2023-10-01",
-      amount: 100.5,
-      status: "Completed",
-      description: "Payment for invoice #123",
-    },
-    {
-      id: 7,
-      date: "2023-10-02",
-      amount: 75.25,
-      status: "Pending",
-      description: "Subscription renewal",
-    },
-    {
-      id: 8,
-      date: "2023-10-03",
-      amount: 150.0,
-      status: "Failed",
-      description: "Refund processing",
-    },
-    {
-      id: 9,
-      date: "2023-10-04",
-      amount: 200.75,
-      status: "Completed",
-      description: "Service fee",
-    },
-    {
-      id: 10,
-      date: "2023-10-05",
-      amount: 50.0,
-      status: "Pending",
-      description: "Donation",
-    },
-    {
-      id: 11,
-      date: "2023-10-01",
-      amount: 100.5,
-      status: "Completed",
-      description: "Payment for invoice #123",
-    },
-    {
-      id: 12,
-      date: "2023-10-02",
-      amount: 75.25,
-      status: "Pending",
-      description: "Subscription renewal",
-    },
-    {
-      id: 13,
-      date: "2023-10-03",
-      amount: 150.0,
-      status: "Failed",
-      description: "Refund processing",
-    },
-    {
-      id: 14,
-      date: "2023-10-04",
-      amount: 200.75,
-      status: "Completed",
-      description: "Service fee",
-    },
-    {
-      id: 15,
-      date: "2023-10-05",
-      amount: 50.0,
-      status: "Pending",
-      description: "Donation",
     },
   ];
 
@@ -242,10 +143,16 @@ export default function Dashboard() {
         <main className="flex-1">
           <div className="flex items-center md:justify-end justify-start mb-10">
             <div className="flex space-x-3">
-              <Link href={"/admin/transactions/foreign-currency"} className="px-4 py-2 bg-[#3682AF] text-white rounded-md">
+              <Link
+                href="/admin/transactions/foreign-currency"
+                className="px-4 py-2 bg-[#3682AF] text-white rounded-md"
+              >
                 Foreign Currency
               </Link>
-              <Link href={"/admin/transactions/send-money"} className="px-4 py-2 border border-[#3682AF] text-[#3682AF] rounded-md">
+              <Link
+                href="/admin/transactions/send-money"
+                className="px-4 py-2 border border-[#3682AF] text-[#3682AF] rounded-md"
+              >
                 Send Money
               </Link>
             </div>
@@ -253,20 +160,39 @@ export default function Dashboard() {
 
           <StatsCards
             stats={{
-              failedTransactions: 100,
-              failedTransactionsCount: 333,
-              completedTransactions: 10,
-              accountBalance: "1K",
-              currency: "ETB",
+              failedTransactions: 0,
+              failedTransactionsCount: 0,
+              completedTransactions: 0,
+              accountBalance: "0 Birr",
+              currency: "",
             }}
           />
 
           <Box sx={{ marginTop: "30px" }}>
-            <Table
-              columns={columns}
-              rows={transactions}
-              onRowClick={handleRowClick}
-            />
+            {loading && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "40vh",
+                }}
+              >
+                <Box className="loader" />
+              </Box>
+            )}
+
+            {!loading && transactions.length === 0 && (
+              <EmptyStateMessage message="You have no transactions" />
+            )}
+
+            {!loading && transactions.length > 0 && (
+              <Table
+                columns={columns}
+                rows={transactions}
+                onRowClick={handleRowClick}
+              />
+            )}
           </Box>
 
           <TransactionDetailModal

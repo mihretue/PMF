@@ -92,7 +92,7 @@ export default function SetupNewPasswordForm({
       </div>
 
       {/* Right side form */}
-      <div className="w-full md:w-1/2 bg-blue-50 p-8 rounded-lg">
+      <div className="w-full md:w-1/2 bg-blue-50 p-8 rounded-lg shadow-lg">
         <div className="flex justify-center mb-4">
           <div className="max-w-xs">
             <Image
@@ -197,7 +197,7 @@ export default function SetupNewPasswordForm({
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
+              className="w-full bg-[#3682AF] text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
             >
               {isLoading ? "Changing..." : "Change Password"}
             </button>
