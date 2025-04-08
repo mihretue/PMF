@@ -90,7 +90,7 @@ function Hero() {
         disableGutters
         sx={{
           py: 4,
-          px: 2,
+          px: 4,
           mt: 4,
           display: "flex",
         }}
