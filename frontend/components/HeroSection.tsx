@@ -89,8 +89,8 @@ function Hero() {
       <Container
         disableGutters
         sx={{
-          py: 4,
-          px: 4,
+          py: 5,
+          px: 2.9,
           mt: 4,
           display: "flex",
         }}
