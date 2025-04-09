@@ -246,19 +246,19 @@ export default function OtpVerificationForm() {
                 <div className="flex justify-center gap-2">
                   {otp.map((digit, index) => (
                     <input
-                      key={index}
-                      ref={(el) => {
-                        inputRefs.current[index] = el
-                      }}
-                      type="text"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleInputChange(index, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(index, e)}
-                      onPaste={index === 0 ? handlePaste : undefined}
-                      className="w-12 h-12 text-center text-xl font-bold border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3682AF]"
-                      disabled={isVerifying}
-                    />
+                    key={index}
+                    ref={(el: HTMLInputElement | null) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleInputChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={index === 0 ? handlePaste : undefined}
+                    className="w-12 h-12 text-center text-xl font-bold border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3682AF]"
+                    disabled={isVerifying}
+                  />
                   ))}
                 </div>
               </div>
