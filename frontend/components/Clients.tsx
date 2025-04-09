@@ -2,15 +2,8 @@ import React from 'react'
 import {
   CheckCircle,
   DollarSign,
-  Facebook,
   Globe,
-  Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Send,
-  Twitter,
+ 
 } from "lucide-react"
 
 function Clients() {

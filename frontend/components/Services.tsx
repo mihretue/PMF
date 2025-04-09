@@ -1,35 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import {
-  Box,
-  Container,
-  Typography,
-  Stack,
-  Paper,
-  InputAdornment,
-  useMediaQuery,
-  useTheme,
-  styled,
-  TextareaAutosize,
-} from "@mui/material"
-import Grid from "@mui/material/Grid"
-import { ChevronRight } from "@mui/icons-material"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
+
 import {
   CheckCircle,
-  DollarSign,
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Send,
-  Twitter,
+
 } from "lucide-react"
 import Image from "next/image"
 
