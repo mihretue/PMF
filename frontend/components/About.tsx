@@ -2,24 +2,18 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import {
-  Box,
-  Container,
-  Typography,
 
-} from "@mui/material"
+import Image from "next/image"
+
 import { Button } from "@/components/ui/button"
 
 
 
 function About() {
   return (
-    <div>
-        <section className="py-16">
-                  <div className="container mx-auto px-4">
+    <div id="about">
+        <section  className="py-16">
+                  <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4">
                     <div className="grid gap-8 md:grid-cols-2">
                       <div className="relative h-64 md:h-auto">
                         <div className="absolute left-0 top-0 h-48 w-48 translate-x-4 translate-y-4 transform rounded-lg bg-gray-200">

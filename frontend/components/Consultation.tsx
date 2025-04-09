@@ -1,14 +1,5 @@
 import React from 'react'
 import {
-  Box,
-  Container,
-  Typography,
-
-  Paper,
-
-  useMediaQuery,
-  useTheme,
-  styled,
   TextareaAutosize,
 } from "@mui/material"
 
@@ -27,7 +18,7 @@ function Consultation() {
   return (
     <div>
         <section className="py-16">
-          <div className="container mx-auto px-4">
+          <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4">
             <h2 className="mb-12 text-center text-3xl font-bold">Free Consultation</h2>
             <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2">
               <div>

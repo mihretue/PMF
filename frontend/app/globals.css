@@ -18,6 +18,9 @@
     --foreground: #000000;
   }
 }
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   background: var(--background);

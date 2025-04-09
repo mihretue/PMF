@@ -1,22 +1,14 @@
 import React from 'react'
 import {
-  CheckCircle,
-  DollarSign,
   Facebook,
-  Globe,
   Instagram,
-  Linkedin,
-  Mail,
-  MapPin,
-  Phone,
-  Send,
   Twitter,
 } from "lucide-react"
 function SocialMedias() {
   return (
     <div>
          <section className="py-16">
-                  <div className="container mx-auto px-4">
+                  <div className="container px-6 md:px-12 lg:px-20 mx-auto px-4 ">
                     <h2 className="mb-12 text-center text-3xl font-bold">Our Social media</h2>
                     <div className="grid gap-6 md:grid-cols-3">
                       <div className="flex items-start">
