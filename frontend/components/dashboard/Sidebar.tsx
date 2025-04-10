@@ -104,7 +104,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     },
     { icon: <Settings size={20} />, text: "Settings", href: "/settings" },
     { icon: <HelpCircle size={20} />, text: "Help Center", href: "/help" },
-    { icon: <LogOut size={20} />, text: "Logout", href: "/logout" },
+    { icon: <LogOut size={20} />, text: "Logout", href: "/" },
   ]
 
   return (
