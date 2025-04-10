@@ -14,9 +14,10 @@ interface Transaction {
 interface TransactionsTableProps {
   transactions: Transaction[]
   totalPages: number
+  onViewDetails: (transaction: Transaction) => void
 }
 
-export default function TransactionsTable({ transactions, totalPages }: TransactionsTableProps) {
+export default function TransactionsTable({ transactions, totalPages, onViewDetails }: TransactionsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortBy, setSortBy] = useState("Latest Date")
 
@@ -76,7 +77,7 @@ export default function TransactionsTable({ transactions, totalPages }: Transact
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.currency}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.date}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button className="px-3 py-1 border border-blue-500 text-blue-500 rounded-md text-xs">
+                  <button className="px-3 py-1 border border-blue-500 text-blue-500 rounded-md text-xs" onClick={() => onViewDetails(transaction)}>
                     View detail
                   </button>
                 </td>
