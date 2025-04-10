@@ -1,5 +1,5 @@
 // const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const BASE_URL = "https://pmf-g5j1.onrender.com"
+const BASE_URL = "http://127.0.0.1:8000"
 
 
 export const AUTH = {

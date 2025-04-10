@@ -200,7 +200,6 @@ class GenerateOTPView(APIView):
         if not user:
             return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if an unexpired OTP already exists
         existing_otp = OTP.objects.filter(
             user=user,
             is_used=False,
@@ -213,25 +212,15 @@ class GenerateOTPView(APIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
-        # Generate and hash OTP
-        otp = generate_otp()
-        hashed_otp = hashlib.sha256(otp.encode()).hexdigest()
+        otp = generate_otp()  # plain 6-digit OTP
 
-        # Save OTP
-        OTP.objects.create(user=user, code=hashed_otp, expires_at=now() + timedelta(minutes=5))
+        # ✅ Save plaintext, let model hash it
+        OTP.objects.create(user=user, code=otp, expires_at=now() + timedelta(minutes=5))
 
-        # Create message
         message = f"Your OTP is {otp}. It expires in 5 minutes."
 
-        # Try sending the email
         try:
-            send_mail(
-                subject,
-                message,
-                from_email=None,  # Uses DEFAULT_FROM_EMAIL
-                recipient_list=[email],
-                fail_silently=False,
-            )
+            send_mail(subject, message, from_email=None, recipient_list=[email], fail_silently=False)
             return Response({'message': 'OTP sent successfully via email'}, status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -272,24 +261,24 @@ class GenerateOTPView(APIView):
     
     
 
+
+
 class VerifyOTPView(APIView):
     def post(self, request):
         email = request.data.get("email")
-        otp_input =  request.data.get("otp")
-        
-        
-        user = User.objects.filter(email= email).first()
+        otp_input = request.data.get("otp")
+
+        user = User.objects.filter(email=email).first()
         if not user:
             return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the latest unused OTP
+        # Get the latest unused, unexpired OTP
         otp_instance = OTP.objects.filter(user=user, is_used=False, expires_at__gt=now()).order_by("-created_at").first()
-        
         if not otp_instance:
             return Response({"error": "No OTP found or it has expired."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verify OTP (hashed comparison)
-        if otp_instance.code != hashlib.sha256(otp_input.encode()).hexdigest():
+        # Use the model's verify method to check OTP
+        if not otp_instance.verify_otp(otp_input):
             return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Mark OTP as used
@@ -300,8 +289,8 @@ class VerifyOTPView(APIView):
         user.is_verified = True
         user.save()
 
-        # Remove OTP from cache
+        # Remove OTP from cache if applicable
         cache.delete(email)
 
         return Response({"message": "OTP verified successfully!"}, status=status.HTTP_200_OK)
-   
+  

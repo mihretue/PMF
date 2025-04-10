@@ -69,32 +69,29 @@ class User(AbstractUser):
         return self.role == 'receiver'
 
 
+
 class OTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    code = models.CharField(max_length=6)  # Store OTP as a string
+    code = models.CharField(max_length=64)  # Storing SHA256 hash
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)
-    
+
     def is_expired(self):
-        """Check if OTP is expired."""
         return now() > self.expires_at
 
     def is_valid(self, otp_input):
-        """Check if OTP is valid (not used, not expired, and matches)."""
         return not self.is_used and not self.is_expired() and self.verify_otp(otp_input)
 
     def hash_otp(self, otp):
-        """Hash the OTP before saving."""
         return hashlib.sha256(otp.encode()).hexdigest()
 
     def verify_otp(self, otp_input):
-        """Verify hashed OTP against user input."""
         return self.code == self.hash_otp(otp_input)
 
     def save(self, *args, **kwargs):
-        """Ensure OTP is hashed before saving."""
-        if not self.pk:  # Only hash OTP on first save
+        # Hash only on first save (i.e., creation)
+        if not self.pk:
             self.code = self.hash_otp(self.code)
         super().save(*args, **kwargs)
 
