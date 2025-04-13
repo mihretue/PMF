@@ -1,8 +1,8 @@
 "use client";
 
-import TransactionDetailModal from '@/components/dashboard/TransactionDetailModal';
-import TransactionsTable from '@/components/dashboard/TransactionsTable';
-import SendMoneyModal from '@/components/dashboard/sendMoneyModal';
+import TransactionDetailModal from '@/components/transactions/TransactionDetailModal';
+import TransactionsTable from '@/components/transactions/TransactionsTable';
+import SendMoneyModal from '@/components/transactions/sendMoneyModal';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 

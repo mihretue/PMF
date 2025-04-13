@@ -1,11 +1,11 @@
 "use client";
 
-import TransactionDetailModal from '@/components/dashboard/TransactionDetailModal';
-import TransactionsTable from '@/components/dashboard/TransactionsTable';
+import TransactionDetailModal from '@/components/transactions/TransactionDetailModal';
+import TransactionsTable from '@/components/transactions/TransactionsTable';
 
 import { Button } from '@/components/ui/button';
 import React from 'react';
-import NeedForeignCurrencyModal from '@/components/dashboard/needForeignCurrencyModal';
+import NeedForeignCurrencyModal from '@/components/transactions/needForeignCurrencyModal';
 
 export default function page() {
   const transactions: any[] = [
