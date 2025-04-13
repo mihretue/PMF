@@ -1,11 +1,11 @@
 "use client";
 
 import React from 'react';
-import ExchangeRateChart from '@/components/ExchangeRateChart';
-import CurrencyConverterCard from '@/components/CurrencyConverterCard';
+import ExchangeRateChart from '@/components/exchange/ExchangeRateChart';
+import CurrencyConverterCard from '@/components/exchange/CurrencyConverterCard';
 import { Box } from '@mui/material';
 import { Button } from '@/components/ui/button';
-import RateAlertModal from '@/components/RateAlertModal'; // Import your modal component
+import RateAlertModal from '@/components/exchange/RateAlertModal'; // Import your modal component
 
 export default function page() {
     const [openRateModal, setOpenRateModal] = React.useState(false); // State to manage modal visibility

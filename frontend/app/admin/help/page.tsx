@@ -2,10 +2,10 @@
 
 import React from 'react';
 
-import HelpCenter from "@/components/help-center"
+import HelpCenter from "@/components/help/help-center"
 
 import CssBaseline from "@mui/material/CssBaseline"
-import HelpCenterDetail from '@/components/help-center-detail';
+import HelpCenterDetail from '@/components/help/help-center-detail';
 export default function page() {
     return (
         <div>

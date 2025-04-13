@@ -5,19 +5,17 @@ import {
   Box,
   Container,
   Typography,
-  Stack,
   Paper,
-  InputAdornment,
   useMediaQuery,
   useTheme,
   styled,
-  Grid,
+
 } from "@mui/material";
 
 import { Button } from "@/components/ui/button";
 
 import Link from "next/link";
-import CurrencyConverterCard from "./CurrencyConverterCard";
+import CurrencyConverterCard from "./exchange/CurrencyConverterCard";
 
 
 const GradientText = styled(Typography)(({ theme }) => ({
