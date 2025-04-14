@@ -83,7 +83,9 @@ export default function SignInForm() {
       if (response.ok) {
         const token = data.token || data.access // Depending on backend format
 
-        // Store token in localStorage or cookie
+        console.log("see token", token)
+
+        // r token in localStorage or cookie
         localStorage.setItem("auth_token", token)
 
         notificationCtx.showNotification({
