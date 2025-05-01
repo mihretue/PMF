@@ -21,5 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/', include("apps.accounts.urls")),
     path("api/kyc/", include("apps.KYC.urls")),
-    path("api/",include("apps.Transaction.urls"))
+    path("api/",include("apps.Transaction.urls")),
+    path('api/escrow/', include('apps.escrow.urls')),
+
 ]
