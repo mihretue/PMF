@@ -59,7 +59,8 @@ INSTALLED_APPS = [
     'apps.KYC',
     'apps.Transaction',
     'apps.Escrow',
-    'apps.Escrow.apps.EscrowConfig',
+    'apps.PaymentTransaction'
+    
     
     
     

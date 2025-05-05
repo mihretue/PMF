@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/user/', include("apps.accounts.urls")),
     path("api/kyc/", include("apps.KYC.urls")),
     path("api/",include("apps.Transaction.urls")),
-    path('api/escrow/', include('apps.escrow.urls')),
+    path('api/escrow/', include('apps.Escrow.urls')),
+    path('api/payments/', include('apps.PaymentTransaction.urls')),
 
 ]
