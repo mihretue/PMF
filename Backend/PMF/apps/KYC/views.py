@@ -9,11 +9,10 @@ from apps.accounts.permissions import IsAdmin, IsSenderOrReceiver
 class KYCCreateView(APIView):
     permission_classes = [IsSenderOrReceiver]
 
-
     def post(self, request):
-        serializer = KYCSerializer(data=request.data)
+        serializer = KYCSerializer(data=request.data, context={'request': request})  # 👈 pass context here
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save()  # 👈 no need for user=request.user
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
