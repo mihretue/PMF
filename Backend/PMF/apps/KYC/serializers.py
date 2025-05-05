@@ -5,6 +5,9 @@ class KYCSerializer(serializers.ModelSerializer):
     class Meta:
         model = KYC
         fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
     def validate(self, data):
         """
