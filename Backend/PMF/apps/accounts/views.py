@@ -118,10 +118,19 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        request.user.auth_token.delete()
-        return Response({"message": "Logged Out Successfully"})
+        try:
+            refresh_token = request.data.get("refresh")
 
+            if not refresh_token:
+                return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+
+        except (TokenError, InvalidToken) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # User profile view that retrieves user information for authenticated users
 class UserProfileView(generics.RetrieveAPIView):
