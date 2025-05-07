@@ -11,8 +11,8 @@ class Escrow(models.Model):
         ('disputed', 'Disputed'),
     ]
 
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     transaction = GenericForeignKey('content_type', 'object_id')  # Can link to MoneyTransfer or ForeignCurrencyRequest
 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
