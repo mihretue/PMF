@@ -164,8 +164,8 @@ DATABASES = {
 #         'ENGINE': 'django.db.backends.postgresql',
 #         'NAME': 'pay_my_fees',
 #         'USER': 'mihretu',
-#         'PASSWORD': 'P@55word',
-#         'HOST': 'localhost',
+#         'PASSWORD': 'ndkBdJmRtxhUTubwcssWdtwHeerbTYwb',
+#         'HOST': 'postgres-xmle.railway.internal',
 #         'PORT': '5432',
 #     }
 # }
