@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, LoginView, UserProfileView, LogoutView, VerifyOTPView, GenerateOTPView
+from .views import RegisterView, LoginView, UserProfileView, LogoutView, VerifyOTPView, GenerateOTPView,GetUserProfileView
 
 
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('generate-otp/',GenerateOTPView.as_view(), name='generate-otp'),
     path('verify-otp/', VerifyOTPView.as_view(), name= 'verify-otp'),
-    path('logout/', LogoutView.as_view(), name='logout')
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('profile/', GetUserProfileView.as_view(), name='get_user_profile'),
 
 ]
