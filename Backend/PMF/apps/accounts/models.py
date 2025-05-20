@@ -37,6 +37,7 @@ class User(AbstractUser):
     address = models.CharField(max_length=255, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='receiver')  # Default is Receiver
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
 
     # Avoid conflicts with Django's built-in auth models
     groups = models.ManyToManyField(

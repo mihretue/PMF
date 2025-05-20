@@ -18,6 +18,8 @@ import hashlib
 import requests
 from django.core.cache import cache
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework.parsers import MultiPartParser, FormParser
+
 import logging
 User = get_user_model()
 
@@ -236,3 +238,23 @@ class GetUserProfileView(APIView):
         user = request.user  # DRF resolves this via the token
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+    
+class ProfilePictureUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        profile_picture = request.FILES.get('profile_picture')
+
+        if profile_picture:
+            user.profile_picture = profile_picture
+            user.save()
+            return Response({
+                "message": "Profile picture updated successfully.",
+                "profile_picture_url": user.profile_picture.url
+            })
+        else:
+            return Response({"error": "No image uploaded."}, status=400)
