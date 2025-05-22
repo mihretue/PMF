@@ -14,7 +14,9 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
-
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,6 +28,13 @@ SMS_MODE_API_KEY = os.getenv("smsMode_Api_key")
 SMS_URL = os.getenv("sms_url")
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv("CLOUD_NAME"),
+    'API_KEY': os.getenv("CLOUD_API_KEY"),
+    'API_SECRET': os.getenv("CLOUD_API_SECRET")
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -44,6 +53,8 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
+    'cloudinary',
+    'cloudinary_storage',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
