@@ -2,7 +2,8 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils.timezone import now
 import hashlib
-
+from cloudinary.models import CloudinaryField
+  
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, phone_number, password=None, **extra_fields):
         if not email:
@@ -37,7 +38,7 @@ class User(AbstractUser):
     address = models.CharField(max_length=255, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='receiver')  # Default is Receiver
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = CloudinaryField('image', blank=True, null=True)
 
     # Avoid conflicts with Django's built-in auth models
     groups = models.ManyToManyField(
