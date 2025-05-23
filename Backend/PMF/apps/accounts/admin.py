@@ -7,7 +7,7 @@ from .models import User, OTP
 @admin.register(User)
 class CustomUserAdmin(BaseUserAdmin):
     model = User
-    list_display = ('email', 'first_name', 'last_name', 'phone_number', 'role', 'is_verified', 'is_staff')
+    list_display = ('email', 'first_name', 'last_name', 'phone_number', 'role', 'is_verified', 'is_staff','profile_picture')
     list_filter = ('role', 'is_verified', 'is_staff', 'is_superuser')
     search_fields = ('email', 'first_name', 'last_name', 'phone_number')
     ordering = ('email',)
