@@ -19,7 +19,7 @@ import requests
 from django.core.cache import cache
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from cloudinary.utils import cloudinary_url
 import logging
 User = get_user_model()
 
@@ -249,19 +249,15 @@ class ProfilePictureUploadView(APIView):
         user = request.user
         profile_picture = request.FILES.get('profile_picture')
 
-        if not profile_picture:
-            return Response({"error": "No image uploaded."}, status=400)
-
-        try:
+        if profile_picture:
             user.profile_picture = profile_picture
             user.save()
 
+            image_url, _ = cloudinary_url(user.profile_picture.name)
+
             return Response({
                 "message": "Profile picture updated successfully.",
-                "profile_picture_url": user.profile_picture.url  # Cloudinary auto-generates URL
-            }, status=200)
-
-        except Exception as e:
-            return Response({
-                "error": f"Something went wrong: {str(e)}"
-            }, status=500)
+                "profile_picture_url": image_url
+            })
+        else:
+            return Response({"error": "No image uploaded."}, status=400)
