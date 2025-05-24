@@ -253,7 +253,8 @@ class ProfilePictureUploadView(APIView):
             user.profile_picture = profile_picture
             user.save()
 
-            image_url, _ = cloudinary_url(user.profile_picture.name)
+            image_url = user.profile_picture.url
+
 
             return Response({
                 "message": "Profile picture updated successfully.",
