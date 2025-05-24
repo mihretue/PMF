@@ -28,13 +28,15 @@ SMS_MODE_API_KEY = os.getenv("smsMode_Api_key")
 SMS_URL = os.getenv("sms_url")
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv("CLOUD_NAME"),
-    'API_KEY': os.getenv("CLOUD_API_KEY"),
-    'API_SECRET': os.getenv("CLOUD_API_SECRET")
-}
-print("Coud Name :",os.getenv("CLOUD_NAME"))
-print("Clud API Key",os.getenv("CLOUD_API_KEY"))
+cloudinary.config( 
+  cloud_name=os.getenv("CLOUD_NAME"), 
+  api_key=os.getenv("CLOUD_API_KEY"), 
+  api_secret=os.getenv("CLOUD_API_SECRET") 
+)
+print(cloudinary.config().cloud_name)
+print(cloudinary.config().api_key)
+print(cloudinary.config().api_secret)
+
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'
 
