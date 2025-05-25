@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate
+from .models import MoneyTransfer, Wallet,ForeignCurrencyRequest, ExchangeRate, TransactionLog
 
 class MoneyTransferSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,3 +27,15 @@ class ExchangeRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExchangeRate
         fields = '__all__' 
+        
+        
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = '__all__'
+
+class TransactionLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TransactionLog
+        fields = '__all__'
+        

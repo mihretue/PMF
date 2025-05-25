@@ -13,7 +13,7 @@ class Escrow(models.Model):
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    transaction = GenericForeignKey('content_type', 'object_id')  # Can link to MoneyTransfer or ForeignCurrencyRequest
+    # transaction = GenericForeignKey('content_type', 'object_id')  # Can link to MoneyTransfer or ForeignCurrencyRequest
 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -37,3 +37,5 @@ class Escrow(models.Model):
 
     def __str__(self):
         return f"Escrow for {self.content_type} {self.object_id} - {self.status}"
+
+

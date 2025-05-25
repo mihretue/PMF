@@ -67,3 +67,26 @@ class ExchangeRate(models.Model):
 
     def __str__(self):
         return f"1 {self.currency_from} = {self.rate} {self.currency_to}"
+    
+    
+    # WALLET MODEL
+class Wallet(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    account_number = models.CharField(max_length=100, unique=True)
+    balance = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=10, default="USD")
+
+    def __str__(self):
+        return f"{self.account_number} | {self.balance} {self.currency}"
+
+
+# TRANSACTION LOG
+class TransactionLog(models.Model):
+    source_account = models.CharField(max_length=100)
+    destination_account = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.amount} from {self.source_account} to {self.destination_account} @ {self.timestamp}"
