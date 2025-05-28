@@ -33,9 +33,7 @@ cloudinary.config(
   api_key=os.getenv("CLOUD_API_KEY"), 
   api_secret=os.getenv("CLOUD_API_SECRET") 
 )
-print(cloudinary.config().cloud_name)
-print(cloudinary.config().api_key)
-print(cloudinary.config().api_secret)
+
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'
