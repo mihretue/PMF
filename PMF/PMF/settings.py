@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     # apps
     'accounts',
     'Notifications',
+    'chatting',
+    'daphne',
     
     
 ]
@@ -160,3 +162,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
+
+
+# ASGI application
+ASGI_APPLICATION = 'PMF.asgi.application'
