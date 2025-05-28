@@ -9,9 +9,9 @@ User = get_user_model() # Get the currently active user model
 
 class PersonalChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Authenticate the user
+        # self.scope["user"] will be your authenticated accounts.User instance
         if not self.scope["user"].is_authenticated:
-            await self.close()
+            await self.close(code=4001) # Unauthorized
             return
 
         # The 'conversation_id' should come from the URL routing

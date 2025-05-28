@@ -53,6 +53,9 @@ class LoginView(APIView):
                 return Response({"message": f"Welcome, {user.full_name}"})
             except AccessToken.DoesNotExist:
                 return Response({"error": "Invalid OAuth2 token"}, status=400)
+        if not email or not password:
+            return Response({"error": "Email and password are required"}, status=400)
+        
 
         # JWT Authentication
         elif auth_type == "JWT":
