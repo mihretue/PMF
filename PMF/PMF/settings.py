@@ -37,22 +37,21 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
-    'oauth2_provider',  
-    'rest_framework_simplejwt', 
-    
+    'oauth2_provider',
+    'rest_framework_simplejwt',
+
     # apps
+    'channels', 
     'accounts',
-    'Notifications',
+    'notifications',
     'chatting',
-    'daphne',
-    
-    
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -166,3 +165,13 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # ASGI application
 ASGI_APPLICATION = 'PMF.asgi.application'
+
+# Channels Layer Configuration 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.0", 6379)], 
+        },
+    },
+}

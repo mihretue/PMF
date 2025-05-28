@@ -11,6 +11,7 @@ import os
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
 
 import  chatting.routing 
 
@@ -19,5 +20,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'PMF.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": URLRouter(chatting.routing.websocket_urlpatterns),
+    "websocket": AuthMiddlewareStack(
+      
+        URLRouter(chatting.routing.websocket_urlpatterns)
+    ),
 })
