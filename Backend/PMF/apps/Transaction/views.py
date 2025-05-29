@@ -11,6 +11,8 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
 
+
+
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
     API for handling Money Transfers.
@@ -33,10 +35,14 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             transfer.transaction_fee = transfer.calculate_transaction_fee()
             
             # 4. Validate sender balance
-            try:
-                sender_wallet = Wallet.objects.get(account_number="SENDER-PAYPAL-TEST")
-            except Wallet.DoesNotExist:
-                raise serializers.ValidationError({"error": "Sender wallet not found."})
+            # try:
+            sender_wallet, created = Wallet.objects.get_or_create(
+                    account_number="SENDER-PAYPAL-TEST",
+                    defaults={"balance": 10000, "currency": "USD"}
+                )
+
+            # except Wallet.DoesNotExist:
+            #     raise serializers.ValidationError({"error": "Sender wallet not found."})
 
             total_deduct = transfer.amount + transfer.transaction_fee
             if sender_wallet.balance < total_deduct:
