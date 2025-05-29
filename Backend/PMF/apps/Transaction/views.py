@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import PermissionDenied
@@ -10,6 +10,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
+
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
     API for handling Money Transfers.
@@ -23,7 +24,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         request = self.request
         currency_to = request.data.get('currency_to', 'ETB')  # Default to ETB
-        
+        account_number= request.data.get('account_number', 'SENDER-PAYPAL-TEST')  # Default account number
         with transaction.atomic():
             # 1. Save the transfer instance
             transfer = serializer.save(sender=request.user)
@@ -32,7 +33,11 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             transfer.transaction_fee = transfer.calculate_transaction_fee()
             
             # 4. Validate sender balance
-            sender_wallet, _ = Wallet.objects.get_or_create(owner=request.user)
+            try:
+                sender_wallet = Wallet.objects.get(account_number="SENDER-PAYPAL-TEST")
+            except Wallet.DoesNotExist:
+                raise serializers.ValidationError({"error": "Sender wallet not found."})
+
             total_deduct = transfer.amount + transfer.transaction_fee
             if sender_wallet.balance < total_deduct:
                 raise serializers.ValidationError(
@@ -44,7 +49,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             sender_wallet.balance -= total_deduct
             sender_wallet.save()
             
-            pmf_eth_wallet = Wallet.objects.get(account_number="PMF-ETH-PAYPAL")
+            pmf_eth_wallet = Wallet.objects.get(account_number=account_number)
             pmf_eth_wallet.balance += transfer.amount
             pmf_eth_wallet.save()
             

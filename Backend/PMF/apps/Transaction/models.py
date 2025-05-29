@@ -82,7 +82,7 @@ class ExchangeRate(models.Model):
 class Wallet(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     account_number = models.CharField(max_length=100, unique=True)
-    balance = models.DecimalField(max_digits=12, decimal_places=2)
+    balance = models.DecimalField(max_digits=12, decimal_places=2,default=0.00)
     currency = models.CharField(max_length=10, default="USD")
 
     def __str__(self):
