@@ -17,31 +17,15 @@ from twilio.rest import Client
 import hashlib
 import requests
 from django.core.cache import cache
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework.parsers import MultiPartParser, FormParser
+from cloudinary.utils import cloudinary_url
 import logging
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
-# Registration view to create a user
-# class RegisterView(generics.CreateAPIView):
-#     queryset = User.objects.all()
-#     serializer_class = RegisterSerializer
-#     permission_classes = [permissions.AllowAny]
 
-#     def create(self, request, *args, **kwargs):
-#         response = super().create(request, *args, **kwargs)
-#         # Fetch the user object using the email provided in the request
-#         user = User.objects.get(email=request.data["email"])
-
-#         # Create JWT tokens (access and refresh)
-#         refresh = RefreshToken.for_user(user)
-
-#         # You can return both the access and refresh tokens
-#         return Response({
-#             "access_token": str(refresh.access_token),
-#             "refresh_token": str(refresh),
-#         }, status=status.HTTP_201_CREATED)
- 
  
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -109,6 +93,7 @@ class LoginView(APIView):
                 return Response({
                     'access_token': str(refresh.access_token),
                     'refresh_token': str(refresh),
+                    user.id: user.id,
                 })
             return Response({"error": "Invalid credentials"}, status=400)
 
@@ -118,10 +103,19 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        request.user.auth_token.delete()
-        return Response({"message": "Logged Out Successfully"})
+        try:
+            refresh_token = request.data.get("refresh")
 
+            if not refresh_token:
+                return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+
+        except (TokenError, InvalidToken) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # User profile view that retrieves user information for authenticated users
 class UserProfileView(generics.RetrieveAPIView):
@@ -137,66 +131,71 @@ class UserProfileView(generics.RetrieveAPIView):
 def generate_otp():
     return str(random.randint(100000,999999))
 
+
 class GenerateOTPView(APIView):
     permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        phone_number = request.data.get("phone_number")
-        user = User.objects.filter(phone_number=phone_number).first()
-       
-        if not user:
-            return Response({"error": "User not found"}, status=400)
-        
-        existing_otp = OTP.objects.filter(user=user, is_used=False, expires_at__gt=now()).first()
-        if existing_otp:
-            return Response({"error": "An OTP has already been sent. Please wait before requesting another."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-        otp = generate_otp()
-        hashed_otp = hashlib.sha256(otp.encode()).hexdigest()
-        OTP.objects.create(user=user, code=hashed_otp, expires_at=now() + timedelta(minutes=5))
-        # client = Client(settings.TWILIO_ACCOUNT_SID,settings.TWILIO_AUTH_TOKEN)
-        cache.set(phone_number, otp, timeout=300)
-        url = settings.SMS_URL
-        # Send OTP via email
-        # message = client.messages.create(
-        #     body=f"Your OTP is {otp}. It expires in 5 minutes.",
-        #     from_ = settings.TWILIO_PHONE_NUMBER,
-        #     to= user.phone_number,
-            
-        # )
-        sms_params = {
-            "accessToken": settings.SMS_MODE_API_KEY,
-            "message": f"Your OTP is {otp}, It expires in 5 minutes",
-            "numero":user.phone_number,
-            "sender": "PMF",
-        }
-        response = requests.post(url, data=sms_params)
-        # if message.sid:
-        #     return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
-        # else:
-        #     return Response({"error": "Failed to send OTP"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        if response.status_code == 200:
-            return Response({"message": "OTP sent successfully"})
-        else:
-            return Response({"error": "Failed to send OTP"}, status=500)    
-    
-class VerifyOTPView(APIView):
     def post(self, request):
-        phone_number = request.data.get("phone_number")
-        otp_input = request.data.get("otp")
+        subject = request.data.get("subject")
+        email = request.data.get("email")
 
-        user = User.objects.filter(phone_number=phone_number).first()
+        if not subject or not email:
+            return Response(
+                {"error": "Subject and recipient email are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = User.objects.filter(email=email).first()
         if not user:
             return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the latest unused OTP
+        existing_otp = OTP.objects.filter(
+            user=user,
+            is_used=False,
+            expires_at__gt=now()
+        ).first()
+
+        if existing_otp:
+            return Response(
+                {"error": "An OTP has already been sent. Please wait before requesting another."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        otp = generate_otp()  # plain 6-digit OTP
+
+        # ✅ Save plaintext, let model hash it
+        OTP.objects.create(user=user, code=otp, expires_at=now() + timedelta(minutes=5))
+
+        message = f"Your OTP is {otp}. It expires in 5 minutes."
+
+        try:
+            send_mail(subject, message, from_email=None, recipient_list=[email], fail_silently=False)
+            return Response({'message': 'OTP sent successfully via email'}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+ 
+
+
+
+class VerifyOTPView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        otp_input = request.data.get("otp")
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the latest unused, unexpired OTP
         otp_instance = OTP.objects.filter(user=user, is_used=False, expires_at__gt=now()).order_by("-created_at").first()
-        
         if not otp_instance:
             return Response({"error": "No OTP found or it has expired."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verify OTP (hashed comparison)
-        if otp_instance.code != hashlib.sha256(otp_input.encode()).hexdigest():
+        # Use the model's verify method to check OTP
+        if not otp_instance.verify_otp(otp_input):
             return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Mark OTP as used
@@ -207,7 +206,59 @@ class VerifyOTPView(APIView):
         user.is_verified = True
         user.save()
 
-        # Remove OTP from cache
-        cache.delete(phone_number)
+        # Remove OTP from cache if applicable
+        cache.delete(email)
 
         return Response({"message": "OTP verified successfully!"}, status=status.HTTP_200_OK)
+
+
+
+class ResendOTPView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        user = User.objects.filter(email=email).first()
+
+        if not user:
+            return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the OTP is still valid
+        otp_instance = OTP.objects.filter(user=user, is_used=False, expires_at__gt=now()).first()
+        if otp_instance:
+            return Response({"error": "An OTP has already been sent. Please wait before requesting another."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # Generate and send a new OTP
+        return GenerateOTPView.as_view()(request)
+        # return Response({"message": "OTP resent successfully!"}, status=status.HTTP_200_OK)
+
+
+class GetUserProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # DRF resolves this via the token
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+    
+class ProfilePictureUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        profile_picture = request.FILES.get('profile_picture')
+
+        if profile_picture:
+            user.profile_picture = profile_picture
+            user.save()
+
+            image_url = user.profile_picture.url
+
+
+            return Response({
+                "message": "Profile picture updated successfully.",
+                "profile_picture_url": image_url
+            })
+        else:
+            return Response({"error": "No image uploaded."}, status=400)

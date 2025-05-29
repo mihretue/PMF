@@ -1,10 +1,14 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
+from .services import get_live_exchange_rate
+from decimal import Decimal
+
+
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -17,26 +21,51 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
     permission_classes = [IsSender]
 
     def perform_create(self, serializer):
-        """
-        Custom logic before saving the money transfer.
-        - Ensures user is authenticated.
-        - Calculates transaction fee.
-        - Applies exchange rate if applicable.
-        """
-        if not self.request.user.is_authenticated:
-            raise PermissionDenied("You must be logged in to perform this action.")
+        request = self.request
+        currency_to = request.data.get('currency_to', 'ETB')  # Default to ETB
+        
+        with transaction.atomic():
+            # 1. Save the transfer instance
+            transfer = serializer.save(sender=request.user)
+            
+            # 2. Calculate and set transaction fee
+            transfer.transaction_fee = transfer.calculate_transaction_fee()
+            
+            # 4. Validate sender balance
+            sender_wallet = Wallet.objects.get(owner=request.user)
+            total_deduct = transfer.amount + transfer.transaction_fee
+            if sender_wallet.balance < total_deduct:
+                raise serializers.ValidationError(
+                    {"error": "Insufficient funds."},
+                    code="insufficient_funds"
+                )
+            
+            # 5. Update wallets
+            sender_wallet.balance -= total_deduct
+            sender_wallet.save()
+            
+            pmf_eth_wallet = Wallet.objects.get(account_number="PMF-ETH-PAYPAL")
+            pmf_eth_wallet.balance += transfer.amount
+            pmf_eth_wallet.save()
+            
+            # 6. Log transaction and create escrow
+            TransactionLog.objects.create(
+                source_account=sender_wallet.account_number,
+                destination_account=pmf_eth_wallet.account_number,
+                amount=transfer.amount,
+                description=f"MoneyTransfer #{transfer.id}"
+            )
+            
+            Escrow.objects.create(
+                content_type=ContentType.objects.get_for_model(transfer),
+                object_id=transfer.id,
+                amount=transfer.amount
+            )
+            
+            # Explicitly save transfer after all updates
+            transfer.save()
 
-        # Create transaction and assign sender
-        money_transfer = serializer.save(sender=self.request.user)
-
-        # Calculate transaction fee
-        money_transfer.transaction_fee = money_transfer.calculate_transaction_fee()
-
-        # Apply exchange rate if it's a money transfer
-        money_transfer.exchange_rate = money_transfer.calculate_exchange_rate()
-
-        money_transfer.save()
-
+    
     def get_queryset(self):
         """
         Users can see only transactions where they are **senders**.
@@ -94,22 +123,37 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
             return ForeignCurrencyRequest.objects.all()  # Admins can see all requests
         return ForeignCurrencyRequest.objects.filter(requester=user)
 
-    @action(detail=True, methods=['POST'])
+    @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """
-        Allow Admins to approve foreign currency requests.
-        """
-        if not request.user.is_admin():
-            return Response({"error": "Only admins can approve requests."}, status=status.HTTP_403_FORBIDDEN)
+        request_obj = self.get_object()
+        if request_obj.status != 'pending':
+            return Response({'error': 'Request already processed.'}, status=400)
 
-        foreign_request = self.get_object()
+        with transaction.atomic():
+            pmf_euro_wallet = Wallet.objects.get(account_number="PMF-EURO-PAYPAL")
+            if pmf_euro_wallet.balance < request_obj.amount_requested:
+                return Response({'error': 'Insufficient funds.'}, status=400)
 
-        if foreign_request.status != 'pending':
-            return Response({"error": "Only pending requests can be approved."}, status=status.HTTP_400_BAD_REQUEST)
+            pmf_euro_wallet.balance -= request_obj.amount_requested
+            pmf_euro_wallet.save()
 
-        foreign_request.status = 'approved'
-        foreign_request.save()
-        return Response({"message": "Foreign Currency Request approved successfully."}, status=status.HTTP_200_OK)
+            TransactionLog.objects.create(
+                source_account=pmf_euro_wallet.account_number,
+                destination_account="Escrow",
+                amount=request_obj.amount_requested,
+                description=f"Foreign Currency Request #{request_obj.id} escrowed"
+            )
+
+            Escrow.objects.create(
+                content_type=ContentType.objects.get_for_model(request_obj),
+                object_id=request_obj.id,
+                amount=request_obj.amount_requested
+            )
+
+            request_obj.status = 'approved'
+            request_obj.save()
+
+        return Response({'message': 'Request approved and escrow created.'}, status=200)
 
     @action(detail=True, methods=['POST'])
     def reject(self, request, pk=None):
@@ -130,9 +174,35 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
 
 
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API for retrieving exchange rates.
-    """
     queryset = ExchangeRate.objects.all()
     serializer_class = ExchangeRateSerializer
-    permission_classes = [permissions.AllowAny]  # Anyone can access exchange rates
+    permission_classes = [permissions.AllowAny]
+
+    def list(self, request):
+        # Fetch only USD→ETB and EUR→ETB
+        usd_to_etb = get_live_exchange_rate("USD", "ETB")
+        eur_to_etb = get_live_exchange_rate("EUR", "ETB")
+
+        if not usd_to_etb or not eur_to_etb:
+            return Response(
+                {"error": "Exchange rates unavailable"}, 
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        # Format response to match dropdown UI
+        data = {
+            "USD": usd_to_etb,
+            "EUR": eur_to_etb,
+        }
+        return Response(data)      
+class TransactionFeeViewSet(viewsets.ViewSet):
+    """
+    API for calculating transaction fees.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @action(detail=False, methods=['GET'], url_path='calculate-fee')
+    def calculate_transaction_fee(self, request):  # Added 'self'
+        amount = Decimal(request.GET.get('amount', 0))
+        fee = amount * Decimal('0.02')
+        return Response({'transaction_fee': str(fee)})

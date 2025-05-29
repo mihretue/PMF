@@ -11,7 +11,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { AUTH } from "@/app/api/endpoints";
 import NotificationContext from "@/context/NotificationContext";
-
+// import {SignUp} from "@/app/services/services";
 interface UserRegistrationForm {
   firstName: string;
   lastName: string;
@@ -118,7 +118,7 @@ export default function SignUpForm() {
         body: JSON.stringify(apiData),
       });
 
-      const data = await response.json();
+    
 
       if (response.ok) {
         notificationCtx.showNotification({
@@ -128,6 +128,7 @@ export default function SignUpForm() {
         setRegistrationSuccess(true);
       } else {
         // Handle field-specific errors from Django
+        const data = await response.json();
         if (data.detail) {
           notificationCtx.showNotification({
             status: "error",

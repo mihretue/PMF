@@ -20,6 +20,15 @@ class MoneyTransfer(models.Model):
         ('canceled', 'Canceled')
     ], default='pending')
     transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    
+    PAYMENT_CHOICES = [
+        ('paypal', 'PayPal'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('mobile_money', 'Mobile Money'),
+    ]
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='paypal')
+    purpose = models.CharField(max_length=255, blank=True)
+    bank_name = models.CharField(max_length=255, blank=True)
     exchange_rate = models.DecimalField(max_digits=12, decimal_places=6, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -30,10 +39,10 @@ class MoneyTransfer(models.Model):
         """Example transaction fee: 2% of the transaction amount."""
         return self.amount * Decimal(0.02)
 
-    def calculate_exchange_rate(self):
-        """Fetch the latest exchange rate"""
-        from .services import get_exchange_rate
-        return get_exchange_rate(self.currency_type, "ETB")  # Assuming recipient currency is ETB
+    # def calculate_exchange_rate(self):
+    #     """Fetch the latest exchange rate"""
+    #     from .services import get_exchange_rate
+    #     return get_exchange_rate(self.currency_type, "ETB")  # Assuming recipient currency is ETB
 
 
 class ForeignCurrencyRequest(models.Model):
@@ -67,3 +76,26 @@ class ExchangeRate(models.Model):
 
     def __str__(self):
         return f"1 {self.currency_from} = {self.rate} {self.currency_to}"
+    
+    
+    # WALLET MODEL
+class Wallet(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    account_number = models.CharField(max_length=100, unique=True)
+    balance = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=10, default="USD")
+
+    def __str__(self):
+        return f"{self.account_number} | {self.balance} {self.currency}"
+
+
+# TRANSACTION LOG
+class TransactionLog(models.Model):
+    source_account = models.CharField(max_length=100)
+    destination_account = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.amount} from {self.source_account} to {self.destination_account} @ {self.timestamp}"

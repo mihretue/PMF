@@ -5,6 +5,9 @@ class KYCSerializer(serializers.ModelSerializer):
     class Meta:
         model = KYC
         fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
     def validate(self, data):
         """
@@ -20,3 +23,8 @@ class KYCSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"document_back": "Passport does not require a back document."})
 
         return data
+    def create(self, validated_data):
+        # Automatically set the user to the current authenticated user
+        user = self.context['request'].user  # Access the user from the request context
+        validated_data['user'] = user
+        return super().create(validated_data)
