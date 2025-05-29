@@ -32,7 +32,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             transfer.transaction_fee = transfer.calculate_transaction_fee()
             
             # 4. Validate sender balance
-            sender_wallet = Wallet.objects.get(owner=request.user)
+            sender_wallet, _ = Wallet.objects.get_or_create(owner=request.user)
             total_deduct = transfer.amount + transfer.transaction_fee
             if sender_wallet.balance < total_deduct:
                 raise serializers.ValidationError(
