@@ -96,7 +96,7 @@ REST_FRAMEWORK = {
 }
 # settings.py
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Use Redis as a message broker
+CELERY_BROKER_URL = 'redis://localhost:6380/0'  # Use Redis as a message broker
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 

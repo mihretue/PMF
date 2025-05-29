@@ -1,10 +1,14 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
+from .services import get_live_exchange_rate
+from decimal import Decimal
+
+
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -18,37 +22,48 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         request = self.request
+        currency_to = request.data.get('currency_to', 'ETB')  # Default to ETB
+        
         with transaction.atomic():
+            # 1. Save the transfer instance
             transfer = serializer.save(sender=request.user)
+            
+            # 2. Calculate and set transaction fee
             transfer.transaction_fee = transfer.calculate_transaction_fee()
-            transfer.exchange_rate = transfer.calculate_exchange_rate()
-            transfer.save()
-
+            
+            # 4. Validate sender balance
             sender_wallet = Wallet.objects.get(owner=request.user)
             total_deduct = transfer.amount + transfer.transaction_fee
             if sender_wallet.balance < total_deduct:
-                raise PermissionDenied("Insufficient funds.")
+                raise serializers.ValidationError(
+                    {"error": "Insufficient funds."},
+                    code="insufficient_funds"
+                )
+            
+            # 5. Update wallets
             sender_wallet.balance -= total_deduct
             sender_wallet.save()
-
+            
             pmf_eth_wallet = Wallet.objects.get(account_number="PMF-ETH-PAYPAL")
             pmf_eth_wallet.balance += transfer.amount
             pmf_eth_wallet.save()
-
+            
+            # 6. Log transaction and create escrow
             TransactionLog.objects.create(
                 source_account=sender_wallet.account_number,
                 destination_account=pmf_eth_wallet.account_number,
                 amount=transfer.amount,
                 description=f"MoneyTransfer #{transfer.id}"
             )
-
+            
             Escrow.objects.create(
                 content_type=ContentType.objects.get_for_model(transfer),
                 object_id=transfer.id,
                 amount=transfer.amount
             )
             
-            
+            # Explicitly save transfer after all updates
+            transfer.save()
 
     
     def get_queryset(self):
@@ -159,9 +174,35 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
 
 
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API for retrieving exchange rates.
-    """
     queryset = ExchangeRate.objects.all()
     serializer_class = ExchangeRateSerializer
-    permission_classes = [permissions.AllowAny]  # Anyone can access exchange rates
+    permission_classes = [permissions.AllowAny]
+
+    def list(self, request):
+        # Fetch only USD→ETB and EUR→ETB
+        usd_to_etb = get_live_exchange_rate("USD", "ETB")
+        eur_to_etb = get_live_exchange_rate("EUR", "ETB")
+
+        if not usd_to_etb or not eur_to_etb:
+            return Response(
+                {"error": "Exchange rates unavailable"}, 
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        # Format response to match dropdown UI
+        data = {
+            "USD": usd_to_etb,
+            "EUR": eur_to_etb,
+        }
+        return Response(data)      
+class TransactionFeeViewSet(viewsets.ViewSet):
+    """
+    API for calculating transaction fees.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @action(detail=False, methods=['GET'], url_path='calculate-fee')
+    def calculate_transaction_fee(self, request):  # Added 'self'
+        amount = Decimal(request.GET.get('amount', 0))
+        fee = amount * Decimal('0.02')
+        return Response({'transaction_fee': str(fee)})
