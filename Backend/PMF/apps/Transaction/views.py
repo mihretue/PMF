@@ -9,7 +9,7 @@ from .services import get_live_exchange_rate
 from decimal import Decimal
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from apps.escrow.models import Escrow
+from apps.Escrow.models import Escrow
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
     API for handling Money Transfers.
