@@ -7,8 +7,7 @@ from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializ
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
 from .services import get_live_exchange_rate
 from decimal import Decimal
-
-
+from django.db import transaction
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
