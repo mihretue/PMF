@@ -70,10 +70,12 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             Escrow.objects.create(
                 content_type=ContentType.objects.get_for_model(transfer),
                 object_id=transfer.id,
-                amount=transfer.amount
+                amount=transfer.amount,
+                status='in_escrow'  # Set initial status to 'in_escrow'
             )
             
             # Explicitly save transfer after all updates
+            transfer.status = 'in_escrow'  # Set status to 'in_escrow'
             transfer.save()
 
     
@@ -106,83 +108,51 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 
 
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
-    """
-    API for handling Foreign Currency Requests.
-    - Receivers can request foreign currency.
-    - Admins can approve or reject requests.
-    """
     queryset = ForeignCurrencyRequest.objects.all()
     serializer_class = ForeignCurrencyRequestSerializer
-    permission_classes = [IsReceiver]
 
     def perform_create(self, serializer):
-        """
-        Ensure only receivers can request foreign currency.
-        """
-        if not self.request.user.is_authenticated:
-            raise PermissionDenied("You must be logged in to perform this action.")
-
-        foreign_request = serializer.save(requester=self.request.user)
-        foreign_request.save()
-
-    def get_queryset(self):
-        """
-        Users can see only their own **foreign currency requests**.
-        """
-        user = self.request.user
-        if user.is_admin():
-            return ForeignCurrencyRequest.objects.all()  # Admins can see all requests
-        return ForeignCurrencyRequest.objects.filter(requester=user)
-
-    @action(detail=True, methods=['post'])
-    def approve(self, request, pk=None):
-        request_obj = self.get_object()
-        if request_obj.status != 'pending':
-            return Response({'error': 'Request already processed.'}, status=400)
-
+        request = self.request
         with transaction.atomic():
-            pmf_euro_wallet = Wallet.objects.get(account_number="PMF-EURO-PAYPAL")
-            if pmf_euro_wallet.balance < request_obj.amount_requested:
-                return Response({'error': 'Insufficient funds.'}, status=400)
+            foreign_request = serializer.save(requester=request.user)
+            foreign_request.transaction_fee = foreign_request.calculate_transaction_fee()
+            foreign_request.save()
 
-            pmf_euro_wallet.balance -= request_obj.amount_requested
+            # Fetch PMF EURO wallet (assuming it's your source pool for foreign currency)
+            pmf_euro_wallet = Wallet.objects.get(account_number="PMF-EURO-PAYPAL")
+
+            total_deduct = foreign_request.amount_requested + foreign_request.transaction_fee
+
+            if pmf_euro_wallet.balance < total_deduct:
+                raise PermissionDenied("Insufficient funds in PMF EURO account.")
+
+            # Deduct from PMF EURO
+            pmf_euro_wallet.balance -= total_deduct
             pmf_euro_wallet.save()
 
+            # Log transaction
             TransactionLog.objects.create(
                 source_account=pmf_euro_wallet.account_number,
                 destination_account="Escrow",
-                amount=request_obj.amount_requested,
-                description=f"Foreign Currency Request #{request_obj.id} escrowed"
+                amount=foreign_request.amount_requested,
+                description=f"Foreign Currency Request #{foreign_request.id} escrowed"
             )
 
+            # Create Escrow
             Escrow.objects.create(
-                content_type=ContentType.objects.get_for_model(request_obj),
-                object_id=request_obj.id,
-                amount=request_obj.amount_requested
+                content_type=ContentType.objects.get_for_model(foreign_request),
+                object_id=foreign_request.id,
+                amount=foreign_request.amount_requested
             )
 
-            request_obj.status = 'approved'
-            request_obj.save()
+            foreign_request.status = 'approved'
+            foreign_request.save()
 
-        return Response({'message': 'Request approved and escrow created.'}, status=200)
-
-    @action(detail=True, methods=['POST'])
-    def reject(self, request, pk=None):
-        """
-        Allow Admins to reject foreign currency requests.
-        """
-        if not request.user.is_admin():
-            return Response({"error": "Only admins can reject requests."}, status=status.HTTP_403_FORBIDDEN)
-
-        foreign_request = self.get_object()
-
-        if foreign_request.status != 'pending':
-            return Response({"error": "Only pending requests can be rejected."}, status=status.HTTP_400_BAD_REQUEST)
-
-        foreign_request.status = 'rejected'
-        foreign_request.save()
-        return Response({"message": "Foreign Currency Request rejected."}, status=status.HTTP_200_OK)
-
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin():
+            return ForeignCurrencyRequest.objects.all()
+        return ForeignCurrencyRequest.objects.filter(requester=user)
 
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExchangeRate.objects.all()

@@ -16,11 +16,28 @@ class MoneyTransferSerializer(serializers.ModelSerializer):
         return money_transfer
 
 
+from rest_framework import serializers
+from .models import ForeignCurrencyRequest
+
 class ForeignCurrencyRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForeignCurrencyRequest
-        fields = '__all__'
-        read_only_fields = ['status']  # Prevent users from modifying status
+        fields = [
+            'id',
+            'requester',
+            'amount_requested',
+            'currency_type',
+            'payment_method',
+            'purpose',
+            'urgency_level',
+            'recipient_full_name',
+            'recipient_account_number',
+            'recipient_sort_code',
+            'transaction_fee',
+            'status',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'requester', 'transaction_fee', 'status', 'created_at']
 
 class ExchangeRateSerializer(serializers.ModelSerializer):
     class Meta:
