@@ -145,7 +145,7 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
                 amount=foreign_request.amount_requested
             )
 
-            foreign_request.status = 'pending'
+            foreign_request.status = 'approved'
             foreign_request.save()
 
     def get_queryset(self):
