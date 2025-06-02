@@ -3,11 +3,13 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Escrow
 from .serializers import EscrowSerializer
-
+from apps.accounts.permissions import IsAdmin
 class EscrowViewSet(viewsets.ModelViewSet):
     queryset = Escrow.objects.all()
     serializer_class = EscrowSerializer
-
+    permission_classes= [IsAdmin]
+    
+  
     @action(detail=True, methods=['post'])
     def release(self, request, pk=None):
         escrow = self.get_object()

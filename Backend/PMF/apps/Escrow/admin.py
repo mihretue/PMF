@@ -3,7 +3,7 @@ from .models import Escrow
 
 @admin.register(Escrow)
 class EscrowAdmin(admin.ModelAdmin):
-    list_display = ('id', 'content_object', 'amount', 'status', 'created_at')
+    list_display = ('id', 'get_content_object', 'amount', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('id', 'object_id')
     readonly_fields = ('created_at',)
@@ -24,3 +24,6 @@ class EscrowAdmin(admin.ModelAdmin):
         updated = queryset.update(status='disputed')
         self.message_user(request, f"{updated} escrows marked as disputed.")
     mark_as_disputed.short_description = "Mark selected escrows as Disputed"
+    def get_content_object(self, obj):
+        return str(obj.content_object)
+    get_content_object.short_description = 'Related Object'
