@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+}
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Montserrat';
+}
+
+.Toastify__toast-container {
+  /* background-color: #fff; */
+  max-width: 400px;
+  width: calc(100vw - 10px);
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.Toastify__toast {
+  /* background-color: #fffffff0 !important; */
+  padding: 20px;
+  /* border: 1px solid #30479c; */
+  border-radius: 8px;
+}
+
+.Toastify__toast > * {
+  font-family: '__Montserrat_d5181b', '__Montserrat_Fallback_d5181b', Helvetica, Arial, sans-serif;
+  color: var(--accent-3);
+  font-weight: 500;
+}
+
+.Toastify__close-button > * {
+  color: var(--accent-3)
+}
+
+.Toastify__toast--success > * {
+  color: #28a745 !important;
+}
+
+.Toastify__toast--success {
+  border-left: 8px solid #28a745;
+  background-color: #e6f4ea;
+}
+
+
+.Toastify__toast--error {
+  border-left: 8px solid #dc3545;
+  background-color: #f8d7da;
+}
+
+.Toastify__toast--error > * {
+  color: #dc3545 !important;
+}
+
+.loader-container {
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  width: 100%; /* Ensure the container takes full width */
+  height: 100%; /* Ensure the container takes full height */
+}
+
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 50px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: 
+    radial-gradient(farthest-side,#5579db 94%,#0000) top/8px 8px no-repeat,
+    conic-gradient(#0000 30%,#9ea9e4);
+  -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 8px),#000 0);
+  animation: l13 1s infinite linear;
+}
+@keyframes l13{ 
+  100%{transform: rotate(1turn)}
+}
+.smallLoader {
+  width: 35px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: 
+    radial-gradient(farthest-side,#5579db 94%,#0000) top/8px 8px no-repeat,
+    conic-gradient(#0000 30%,#9ea9e4);
+  -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 8px),#000 0);
+  animation: l13 1s infinite linear;
+}
+@keyframes l13{ 
+  100%{transform: rotate(1turn)}
+}
