@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
     'oauth2_provider',  
@@ -69,6 +70,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     
     # apps
+    'channels', 
     'apps.accounts',
     'apps.KYC',
     'apps.Transaction',
@@ -76,12 +78,12 @@ INSTALLED_APPS = [
     'apps.PaymentTransaction'
     
     
-    
-    
+    'notifications',
+    'chatting',
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -241,3 +243,18 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mihretuendeshaw84@gmail.com'
 EMAIL_HOST_PASSWORD = 'qymy eawv mzuz kuzq'  # use an app password if using Gmail
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+
+# ASGI application
+ASGI_APPLICATION = 'PMF.asgi.application'
+
+# Channels Layer Configuration 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.0", 6379)], 
+        },
+    },
+}
