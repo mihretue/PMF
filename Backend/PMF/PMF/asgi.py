@@ -1,15 +1,4 @@
-<<<<<<< HEAD:PMF/PMF/asgi.py
 # PMF/asgi.py
-=======
-"""
-ASGI config for PMF project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
-"""
->>>>>>> 580101a1e76761a0e66563686e61305b8dbec3af:Backend/PMF/PMF/asgi.py
 
 import os
 import django
