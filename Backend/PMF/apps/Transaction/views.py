@@ -10,7 +10,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
-
+from .signals import create_wallet_for_new_user
 
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
