@@ -15,7 +15,7 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from PMF.middleware import TokenAuthMiddlewareStack
 
-import chatting.routing
+import apps.chatting.routing
 
 
 application = ProtocolTypeRouter({

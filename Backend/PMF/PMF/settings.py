@@ -65,12 +65,7 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'oauth2_provider',
-    'rest_framework_simplejwt',
-
-    # apps
-    
-    'oauth2_provider',  
-    'rest_framework_simplejwt', 
+    'rest_framework_simplejwt',   
     "django_celery_beat",
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
@@ -82,7 +77,8 @@ INSTALLED_APPS = [
     'apps.Transaction',
     'apps.Escrow',
     'apps.PaymentTransaction',
-    'apps.channels', 
+  
+    
     'apps.notifications',
     'apps.chatting',
     
