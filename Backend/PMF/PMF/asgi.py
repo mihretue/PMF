@@ -22,7 +22,7 @@ application = ProtocolTypeRouter({
     "http": get_asgi_application(), # get_asgi_application() is now defined because it's imported above
     "websocket": TokenAuthMiddlewareStack(
         URLRouter(
-            chatting.routing.websocket_urlpatterns
+            apps.chatting.routing.websocket_urlpatterns
         )
     ),
 })
