@@ -63,19 +63,12 @@ INSTALLED_APPS = [
     'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD:PMF/PMF/settings.py
+
     'oauth2_provider',
     'rest_framework_simplejwt',
 
     # apps
-    'channels', 
-    'accounts',
-    'notifications',
-    'chatting',
-=======
->>>>>>> 1060cc4c7d21d84ed819cb12df9ca34011d875e3
+    
     'oauth2_provider',  
     'rest_framework_simplejwt', 
     "django_celery_beat",
@@ -88,17 +81,16 @@ INSTALLED_APPS = [
     'apps.KYC',
     'apps.Transaction',
     'apps.Escrow',
-    'apps.PaymentTransaction'
+    'apps.PaymentTransaction',
+    'apps.channels', 
+    'apps.notifications',
+    'apps.chatting',
     
     
-<<<<<<< HEAD
-    'notifications',
-    'chatting',
-=======
+
     
     
->>>>>>> 580101a1e76761a0e66563686e61305b8dbec3af:Backend/PMF/PMF/settings.py
->>>>>>> 1060cc4c7d21d84ed819cb12df9ca34011d875e3
+
 ]
 
 REST_FRAMEWORK = {
@@ -247,9 +239,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD:PMF/PMF/settings.py
 
 # ASGI application
 ASGI_APPLICATION = 'PMF.asgi.application'
@@ -263,8 +252,6 @@ CHANNEL_LAYERS = {
         },
     },
 }
-=======
->>>>>>> 1060cc4c7d21d84ed819cb12df9ca34011d875e3
 # settings.py
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -280,22 +267,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mihretuendeshaw84@gmail.com'
 EMAIL_HOST_PASSWORD = 'qymy eawv mzuz kuzq'  # use an app password if using Gmail
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-<<<<<<< HEAD
 
-
-
-# ASGI application
-ASGI_APPLICATION = 'PMF.asgi.application'
-
-# Channels Layer Configuration 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.0", 6379)], 
-        },
-    },
-}
-=======
->>>>>>> 580101a1e76761a0e66563686e61305b8dbec3af:Backend/PMF/PMF/settings.py
->>>>>>> 1060cc4c7d21d84ed819cb12df9ca34011d875e3
