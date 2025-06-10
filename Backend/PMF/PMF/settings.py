@@ -63,7 +63,7 @@ INSTALLED_APPS = [
     'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
-
+    'rest_framework.authtoken',
     'oauth2_provider',
     'rest_framework_simplejwt',   
     "django_celery_beat",
@@ -95,6 +95,7 @@ REST_FRAMEWORK = {
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
        
         # 'rest_framework.permissions.AllowAny',
   
