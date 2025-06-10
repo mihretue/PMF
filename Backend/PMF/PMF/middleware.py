@@ -2,7 +2,6 @@
 
 import jwt
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 from urllib.parse import parse_qs
 from django.contrib.auth import get_user_model
@@ -50,6 +49,8 @@ class TokenAuthMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
+        from django.contrib.auth.models import AnonymousUser  # <-- moved here
+
         # Parse the query string to get the token
         query_string = parse_qs(scope["query_string"].decode("utf8"))
         token = query_string.get("token")
@@ -58,7 +59,7 @@ class TokenAuthMiddleware:
             # Get the first token if multiple are present
             scope["user"] = await get_user_from_token(token[0])
         else:
-            scope["user"] = AnonymousUser() # No token, so an anonymous user
+            scope["user"] = AnonymousUser()  # No token, so an anonymous user
 
         return await self.app(scope, receive, send)
 
