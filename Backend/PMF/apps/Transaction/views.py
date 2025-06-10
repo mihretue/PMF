@@ -110,6 +110,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
     queryset = ForeignCurrencyRequest.objects.all()
     serializer_class = ForeignCurrencyRequestSerializer
+    permission_classes = [IsReceiver]
 
     def perform_create(self, serializer):
         request = self.request
@@ -192,18 +193,19 @@ class TransactionFeeViewSet(viewsets.ViewSet):
 class MyTransactionViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=False, methods=['get'], url_path='money-transfers')
-    def money_transfers(self, request):
+# permission_classes = [IsSender]
+    @action(detail=False, methods=['get'], url_path='money-transfers',permission_classes=[IsSender])
+    def money_transfers(self, request): 
         transfers = MoneyTransfer.objects.filter(sender=request.user).order_by('-created_at')
         serializer = MoneyTransferSerializer(transfers, many=True)
         return Response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='foreign-requests')
+# permission_classes = [IsReceiver]
+    @action(detail=False, methods=['get'], url_path='foreign-requests', permission_classes=[IsReceiver])
     def foreign_requests(self, request):
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user).order_by('-created_at')
         serializer = ForeignCurrencyRequestSerializer(requests, many=True)
         return Response(serializer.data)
-
+# permission_classes = [IsAuthenticated]
     @action(detail=False, methods=['get'], url_path='all')
     def all_transactions(self, request):
         transfers = MoneyTransfer.objects.filter(sender=request.user)
