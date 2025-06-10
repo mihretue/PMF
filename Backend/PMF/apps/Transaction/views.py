@@ -175,7 +175,8 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
             "USD": usd_to_etb,
             "EUR": eur_to_etb,
         }
-        return Response(data)      
+        return Response(data)  
+        
 class TransactionFeeViewSet(viewsets.ViewSet):
     """
     API for calculating transaction fees.
