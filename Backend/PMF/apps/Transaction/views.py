@@ -188,3 +188,34 @@ class TransactionFeeViewSet(viewsets.ViewSet):
         amount = Decimal(request.GET.get('amount', 0))
         fee = amount * Decimal('0.02')
         return Response({'transaction_fee': str(fee)})
+    
+    
+    
+class MyTransactionViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+# permission_classes = [IsSender]
+    @action(detail=False, methods=['get'], url_path='money-transfers',permission_classes=[IsSender])
+    def money_transfers(self, request): 
+        transfers = MoneyTransfer.objects.filter(sender=request.user).order_by('-created_at')
+        serializer = MoneyTransferSerializer(transfers, many=True)
+        return Response(serializer.data)
+# permission_classes = [IsReceiver]
+    @action(detail=False, methods=['get'], url_path='foreign-requests', permission_classes=[IsReceiver])
+    def foreign_requests(self, request):
+        requests = ForeignCurrencyRequest.objects.filter(requester=request.user).order_by('-created_at')
+        serializer = ForeignCurrencyRequestSerializer(requests, many=True)
+        return Response(serializer.data)
+# permission_classes = [IsAuthenticated]
+    @action(detail=False, methods=['get'], url_path='all')
+    def all_transactions(self, request):
+        transfers = MoneyTransfer.objects.filter(sender=request.user)
+        requests = ForeignCurrencyRequest.objects.filter(requester=request.user)
+
+        transfer_serializer = MoneyTransferSerializer(transfers, many=True)
+        request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
+
+        return Response({
+            "money_transfers": transfer_serializer.data,
+            "foreign_currency_requests": request_serializer.data
+        })
