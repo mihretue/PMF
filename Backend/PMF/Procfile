@@ -1,1 +1,1 @@
-web: daphne -b 0.0.0.0 -p $PORT PMF.asgi:application
+web: daphne PMF.asgi:application --port $PORT --bind 0.0.0.0 -v2
