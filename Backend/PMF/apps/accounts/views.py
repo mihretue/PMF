@@ -28,7 +28,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.password_validation import validate_password
-
+from .permissions import IsAdmin
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
@@ -334,3 +334,12 @@ class ChangePasswordView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({"message": "Password updated successfully."})
+    
+class TotalUserView(APIView):
+    permission_classes = [IsAdmin]    
+    
+    def get(self, request):
+        total_users = User.objects.count()
+        return Response({
+            "total_users": total_users
+        }, status=status.HTTP_200_OK)    

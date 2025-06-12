@@ -5,6 +5,7 @@ from rest_framework import status, permissions
 from .models import User, KYC
 from .serializers import KYCSerializer
 from apps.accounts.permissions import IsAdmin, IsSenderOrReceiver
+from rest_framework.generics import ListAPIView
 
 class KYCCreateView(APIView):
     permission_classes = [IsSenderOrReceiver]
@@ -34,14 +35,19 @@ class KYCAdminUpdateView(APIView):
     permission_classes = [IsAdmin]
 
     def patch(self, request, kyc_id):
-        kyc = KYC.objects.get(id=kyc_id)
-        kyc.verification_status = request.data.get("verification_status", kyc.verification_status)
-        kyc.save()
+        try:
+            kyc = KYC.objects.get(id=kyc_id)
+        except KYC.DoesNotExist:
+            return Response({"error": "KYC record not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Notify user via email (Optional)
-        return Response({"message": "KYC status updated successfully"}, status=status.HTTP_200_OK)
-
-
+        serializer = KYCSerializer(kyc, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "KYC status updated successfully",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 #Put request
 
 class KYCUpdateView(APIView):
@@ -100,3 +106,28 @@ class UserKYCDetailView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except KYC.DoesNotExist:
             return Response({"error": "KYC record not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class KYCListView(ListAPIView):
+    permissions_classes = [IsAdmin]
+    queryset = KYC.objects.all().order_by('-created_at')
+    serializer_class = KYCSerializer
+    
+
+
+class KYCTotalsView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        totals = KYC.objects.aggregate(
+            total=Count('id'),
+            pending=Count('id', filter=models.Q(verification_status='pending')),
+            approved=Count('id', filter=models.Q(verification_status='approved')),
+            rejected=Count('id', filter=models.Q(verification_status='rejected'))
+        )
+        return Response({
+            "total_applications": totals['total'],
+            "pending_total": totals['pending'],
+            "approved_total": totals['approved'],
+            "rejected_total": totals['rejected']
+        }, status=status.HTTP_200_OK)
