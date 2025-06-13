@@ -1,78 +1,113 @@
+# Notifications App
 
-## One-to-One Chat API Endpoints
-
-These are the REST API endpoints you'll create within your `chatting` app, assuming they are prefixed with `/api/chat/`.
-
----
-
-### 1. List & Create Conversations
-
-**Endpoint:** `GET /api/chat/conversations/`
-* **Purpose:** Retrieve all one-to-one conversations the **authenticated user** is involved in.
-* **Data (Response):** An array of conversation objects. Each object includes:
-    * `id`: Unique ID of the conversation.
-    * `user1`, `user2`: Detailed objects of the two participants (e.g., `id`, `username`).
-    * `created_at`: Timestamp of conversation creation.
-    * `last_message`: (Optional) The most recent message in the conversation.
-* **Conditions:** User must be authenticated.
-
-**Endpoint:** `POST /api/chat/conversations/`
-* **Purpose:** Initiate a new conversation with a specific user. If a conversation already exists between the two users, it returns the existing one.
-* **Data (Request Body):**
-    ```json
-    {
-        "target_user_id": <ID of the other user>
-    }
-    ```
-* **Data (Response):** A single conversation object (newly created or existing).
-* **Conditions:**
-    * User must be authenticated.
-    * `target_user_id` must correspond to a valid, existing user.
-    * `target_user_id` cannot be the authenticated user's ID.
+This is a Django app for managing user notifications with a simple REST API.
 
 ---
 
-### 2. Retrieve Message History
+## Features
 
-**Endpoint:** `GET /api/chat/conversations/{conversation_id}/messages/`
-* **Purpose:** Fetch a paginated list of historical messages for a specific conversation.
-* **URL Parameters:**
-    * `conversation_id`: The unique ID of the conversation.
-* **Data (Response):** A paginated array of message objects. Each object includes:
-    * `message_id`: Unique ID of the message.
-    * `sender`: Detailed object of the sender (e.g., `id`, `username`).
-    * `content`: The message text.
-    * `timestamp`: When the message was sent.
-    * `read`: Boolean indicating if the message has been read by the recipient (optional).
-* **Conditions:**
-    * User must be authenticated.
-    * User must be a participant in the specified `conversation_id`.
-    * `conversation_id` must exist.
+- **List notifications** for the authenticated user.
+- **Mark notifications as read**.
+- **Delete notifications** (only your own).
+- All endpoints require authentication.
+- Each user can only access and manage their own notifications.
 
 ---
 
-### WebSocket Endpoint (Real-time)
+## API Endpoints
 
-**Endpoint:** `ws://your-api-domain/ws/chat/{conversation_id}/`
-* **Purpose:** Establish a real-time, bi-directional connection for sending and receiving chat messages instantly.
-* **Data (Sending from Frontend):**
-    ```json
-    {
-        "message": "Hello from the frontend!"
-    }
-    ```
-* **Data (Receiving from Backend):**
-    ```json
-    {
-        "type": "chat_message",
-        "message": "Hello from the backend!",
-        "sender_id": <Sender's User ID>,
-        "sender_username": "sender_name",
-        "timestamp": "ISO_8601_datetime_string",
-        "message_id": <Message ID from DB>
-    }
-    ```
-* **Conditions:**
-    * User must be authenticated (typically by passing a token in the WebSocket URL query params like `ws://.../?token=YOUR_JWT`).
-    * User must be a participant in the specified `conversation_id`.
-    * `conversation_id` must exist.
+Base URL: `/api/notifications/`
+
+| Method | Endpoint                        | Description                       | Request Body / Params |
+|--------|---------------------------------|-----------------------------------|----------------------|
+| GET    | `/api/notifications/`           | List all your notifications       | —                    |
+| PATCH  | `/api/notifications/<pk>/read/` | Mark a notification as read       | —                    |
+| DELETE | `/api/notifications/<pk>/delete/`| Delete a notification             | —                    |
+
+- `pk` is the ID of the notification.
+
+---
+
+## Example Usage
+
+### List Notifications
+
+```http
+GET /api/notifications/
+Authorization: Token <your-token>
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "user": 5,
+    "message": "You have a new message",
+    "read": false,
+    "created_at": "2025-06-13T00:53:00Z"
+  },
+  ...
+]
+```
+
+---
+
+### Mark Notification as Read
+
+```http
+PATCH /api/notifications/1/read/
+Authorization: Token <your-token>
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user": 5,
+  "message": "You have a new message",
+  "read": true,
+  "created_at": "2025-06-13T00:53:00Z"
+}
+```
+
+---
+
+### Delete Notification
+
+```http
+DELETE /api/notifications/1/delete/
+Authorization: Token <your-token>
+```
+
+**Response:** HTTP 204 No Content
+
+---
+
+## Setup
+
+1. **Add the app to `INSTALLED_APPS`** in your Django settings.
+
+2. **Include the URLs** in your project's `urls.py`:
+   ```python
+   path('api/notifications/', include('notifications.urls')),
+   ```
+
+3. **Run migrations** (if you have a `Notification` model):
+   ```bash
+   python manage.py makemigrations notifications
+   python manage.py migrate
+   ```
+
+---
+
+## Permissions
+
+- All endpoints require authentication.
+- Users can only access and manage their own notifications.
+
+---
+
+## License
+
+MIT License.

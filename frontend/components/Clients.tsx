@@ -42,7 +42,7 @@ function Clients() {
                       <div className="rounded-lg bg-gray-100 p-6">
                         <h3 className="mb-2 text-3xl font-bold">3000+</h3>
                         <p className="text-gray-600">Customer Support Hours</p>
-                        <p className="mt-2 text-sm text-gray-500">We've spent over 3000 hours helping our clients</p>
+                        <p className="mt-2 text-sm text-gray-500">We&apos;ve spent over 3000 hours helping our clients</p>
                       </div>
                     </div>
                   </div>

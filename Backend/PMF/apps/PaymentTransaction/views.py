@@ -6,10 +6,12 @@ from .models import PaymentTransaction
 from apps.Escrow.models import Escrow
 from .serializers import PaymentTransactionSerializer
 
+# 🟢 Import Notification model
+from apps.Notifications.models import Notification
+
 class PaymentTransactionViewSet(viewsets.ModelViewSet):
     queryset = PaymentTransaction.objects.all()
     serializer_class = PaymentTransactionSerializer
-
 
 class PayPalWebhookView(APIView):
     authentication_classes = []
@@ -43,8 +45,17 @@ class PayPalWebhookView(APIView):
             status='completed'
         )
 
+        # Notification for completed payment
+        try:
+            if payment.sender:
+                Notification.objects.create(
+                    user=payment.sender,
+                    message=f"Your payment (Transaction ID: {payment.transaction_id}) of ${payment.amount} has been received and is in escrow."
+                )
+        except Exception as e:
+            pass
+
         if not hasattr(txn, 'escrow'):
-            from apps.Escrow.models import Escrow
             Escrow.objects.create(
                 content_type=content_type,
                 object_id=object_id,

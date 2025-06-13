@@ -1,23 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import {
   Box,
-  Container,
-  Typography,
-
-  Paper,
-
-  useMediaQuery,
-  useTheme,
-  styled,
-  TextareaAutosize,
 } from "@mui/material"
-
-import { ChevronRight } from "@mui/icons-material"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
 
 import Header from "@/components/Header"
 import Hero from "@/components/HeroSection"
@@ -36,8 +21,6 @@ import Footer from "@/components/Footer"
 
 export default function Home() {
 
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh"  }}>

@@ -4,12 +4,13 @@ from rest_framework.decorators import action
 from .models import Escrow
 from .serializers import EscrowSerializer
 from apps.accounts.permissions import IsAdmin
+from apps.Notifications.models import Notification
+
 class EscrowViewSet(viewsets.ModelViewSet):
     queryset = Escrow.objects.all()
     serializer_class = EscrowSerializer
     permission_classes= [IsAdmin]
     
-  
     @action(detail=True, methods=['post'])
     def release(self, request, pk=None):
         escrow = self.get_object()
@@ -29,12 +30,37 @@ class EscrowViewSet(viewsets.ModelViewSet):
 
         escrow.release_funds()
 
+        # 🟢 Notification: Funds released
+        try:
+            # Notify the relevant user (e.g., receiver of escrowed funds)
+            user = getattr(escrow.content_object, "receiver", None) or getattr(escrow.content_object, "user", None)
+            if user:
+                Notification.objects.create(
+                    user=user,
+                    message=f"Funds from escrow (ID: {escrow.id}) have been released to you."
+                )
+        except Exception as e:
+            pass
+
         return Response({'message': 'Funds released.'}, status=200)
+
     @action(detail=True, methods=['post'])
     def refund(self, request, pk=None):
         escrow = self.get_object()
         if escrow.status in ['in_escrow', 'disputed']:
             escrow.refund_funds()
+
+            # 🟢 Notification: Funds refunded
+            try:
+                user = getattr(escrow.content_object, "sender", None) or getattr(escrow.content_object, "user", None)
+                if user:
+                    Notification.objects.create(
+                        user=user,
+                        message=f"Funds in escrow (ID: {escrow.id}) have been refunded to you."
+                    )
+            except Exception as e:
+                pass
+
             return Response({'message': 'Funds refunded.'}, status=200)
         return Response({'error': 'Cannot refund funds at this stage.'}, status=400)
 
@@ -43,5 +69,16 @@ class EscrowViewSet(viewsets.ModelViewSet):
         escrow = self.get_object()
         if escrow.status == 'in_escrow':
             escrow.mark_as_disputed()
+            # 🟢 Notification: Escrow disputed
+            try:
+                user = getattr(escrow.content_object, "sender", None) or getattr(escrow.content_object, "user", None)
+                if user:
+                    Notification.objects.create(
+                        user=user,
+                        message=f"Escrow (ID: {escrow.id}) has been marked as disputed. Please contact support if you need assistance."
+                    )
+            except Exception as e:
+                pass
+
             return Response({'message': 'Escrow marked as disputed.'}, status=200)
         return Response({'error': 'Cannot dispute this escrow.'}, status=400)

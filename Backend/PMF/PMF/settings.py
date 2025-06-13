@@ -19,6 +19,7 @@ import cloudinary.uploader
 import cloudinary.api
 load_dotenv()
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 TWILIO_ACCOUNT_SID = os.getenv("Account_sId")
@@ -60,27 +61,20 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
     'oauth2_provider',
-    'rest_framework_simplejwt',   
     "django_celery_beat",
     'corsheaders',
-    'rest_framework_simplejwt.token_blacklist',
     
     # apps
-    'channels', 
     'apps.accounts',
     'apps.KYC',
     'apps.Transaction',
     'apps.Escrow',
     'apps.PaymentTransaction',
-  
-    
-    'apps.notifications',
-    'apps.chatting',
+    'apps.Notifications',
     
     
 
@@ -175,9 +169,11 @@ WSGI_APPLICATION = 'PMF.wsgi.application'
 # }
 
 
+
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
+        default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"),
         conn_max_age=600,
     )
 }
