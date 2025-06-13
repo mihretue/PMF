@@ -1,1 +1,1 @@
-web: gunicorn PMF.wsgi
+web: gunicorn --bind 0.0.0.0:${PORT} PMF.wsgi:application
