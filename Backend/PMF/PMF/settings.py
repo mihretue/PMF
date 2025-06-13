@@ -84,16 +84,16 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  
-        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+'DEFAULT_AUTHENICATION_CLASSES': [
+    'rest_framework_simplejwt.authentication.JWTAuthentication',  
+    'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    'rest_framework.authentication.SessionAuthentication',
+    'rest_framework.authentication.BasicAuthentication',
         # 'rest_framework.authentication.TokenAuthentication',
-       
-        # 'rest_framework.permissions.AllowAny',
-  
-    ],
+],
+'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+'PAGE_SIZE': 10,
+# 'rest_framework.permissions.AllowAny',
     # 'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',  # Only allow authenticated users
     # ],

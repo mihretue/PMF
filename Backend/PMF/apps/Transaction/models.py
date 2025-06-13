@@ -2,8 +2,44 @@ from django.db import models
 from django.conf import settings
 from decimal import Decimal
 from django.utils.timezone import now
+from apps.Escrow.models import Escrow
+from django.core.validators import RegexValidator
 
-class MoneyTransfer(models.Model):
+class BaseTransaction(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('canceled', 'Canceled'),
+        ('in_escrow', 'In Escrow'),
+        ('released', 'Released'),
+        ('disputed', 'Disputed')
+    ]
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    escrow = models.OneToOneField('Escrow.Escrow', null=True, blank=True, on_delete=models.SET_NULL)
+    
+    class Meta:
+        abstract = True
+
+    def update_from_escrow(self):
+        if self.escrow:
+            with transaction.atomic():
+                self.status = self.get_mapped_status(self.escrow.status)
+                self.save()
+
+    @staticmethod
+    def get_mapped_status(escrow_status):
+        mapping = {
+            'pending': 'pending',
+            'funds_held': 'in_escrow',
+            'released': 'completed',
+            'refunded': 'canceled',
+            'disputed': 'disputed'
+        }
+        return mapping.get(escrow_status, 'pending')
+    
+class MoneyTransfer(BaseTransaction):
     """
     Model for sending money (Money Transfer)
     """
@@ -13,12 +49,7 @@ class MoneyTransfer(models.Model):
     recipient_bank_account = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency_type = models.CharField(max_length=10)
-    status = models.CharField(max_length=10, choices=[
-        ('pending', 'Pending'), 
-        ('completed', 'Completed'), 
-        ('failed', 'Failed'), 
-        ('canceled', 'Canceled')
-    ], default='pending')
+
     transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     
     PAYMENT_CHOICES = [
@@ -39,13 +70,24 @@ class MoneyTransfer(models.Model):
         """Example transaction fee: 2% of the transaction amount."""
         return self.amount * Decimal(0.02)
 
-    # def calculate_exchange_rate(self):
-    #     """Fetch the latest exchange rate"""
-    #     from .services import get_exchange_rate
-    #     return get_exchange_rate(self.currency_type, "ETB")  # Assuming recipient currency is ETB
+    def initiate_escrow(self):
+        with transaction.atomic():
+            if not self.escrow:
+                self.escrow = Escrow.objects.create(
+                    amount=self.amount,
+                    currency=self.currency_type,
+                    status='funds_held',
+                    content_type=ContentType.objects.get_for_model(self),
+                    object_id=self.pk
+                )
+                self.save()
+            return self.escrow
+    def save(self, *args, **kwargs):
+        if not self.transaction_fee:
+            self.transaction_fee = self.calculate_transaction_fee()
+        super().save(*args, **kwargs)
 
-
-class ForeignCurrencyRequest(models.Model):
+class ForeignCurrencyRequest(BaseTransaction):
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="foreign_currency_requests")
     amount_requested = models.DecimalField(max_digits=12, decimal_places=2)
     currency_type = models.CharField(max_length=10)
@@ -59,11 +101,6 @@ class ForeignCurrencyRequest(models.Model):
     recipient_sort_code = models.CharField(max_length=20, null=True, blank=True)
     
     transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    status = models.CharField(max_length=10, choices=[
-        ('pending', 'Pending'), 
-        ('approved', 'Approved'), 
-        ('rejected', 'Rejected')
-    ], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -72,13 +109,32 @@ class ForeignCurrencyRequest(models.Model):
     def calculate_transaction_fee(self):
         """Example flat 2% fee"""
         return self.amount_requested * Decimal(0.02)
-
+    
+    def initiate_escrow(self):
+        with transaction.atomic():
+            if not self.escrow:
+                self.escrow = Escrow.objects.create(
+                    amount=self.amount_requested,
+                    currency=self.currency_type,
+                    status='funds_held',
+                    content_type=ContentType.objects.get_for_model(self),
+                    object_id=self.pk
+                )
+                self.save()
+            return self.escrow
+        
+    def save(self, *args, **kwargs):
+        if not self.transaction_fee:
+            self.transaction_fee = self.calculate_transaction_fee()
+        super().save(*args, **kwargs)
+        
 class ExchangeRate(models.Model):
     """
     Model to store exchange rates for different currencies.
     """
-    currency_from = models.CharField(max_length=10)  # Example: "USD"
-    currency_to = models.CharField(max_length=10)  # Example: "ETB"
+    currency_regex = RegexValidator(regex=r'^[A-Z]{3}$', message="Currency code must be a 3-letter ISO 4217 code (e.g., USD).")
+    currency_from = models.CharField(max_length=10, validators=[currency_regex])  # Example: "USD"
+    currency_to = models.CharField(max_length=10, validators=[currency_regex])  # Example: "ETB"
     rate = models.DecimalField(max_digits=12, decimal_places=6)  # Example: 56.23
     last_updated = models.DateTimeField(default=now)
 

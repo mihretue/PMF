@@ -30,7 +30,7 @@ from django.contrib.auth.password_validation import validate_password
 
 # 🟢 Import Notification model
 from apps.Notifications.models import Notification
-
+from .permissions import IsAdmin
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
@@ -362,3 +362,12 @@ class ChangePasswordView(APIView):
             logger.warning(f"Could not create notification: {notify_error}")
 
         return Response({"message": "Password updated successfully."})
+    
+class TotalUserView(APIView):
+    permission_classes = [IsAdmin]    
+    
+    def get(self, request):
+        total_users = User.objects.count()
+        return Response({
+            "total_users": total_users
+        }, status=status.HTTP_200_OK)    
