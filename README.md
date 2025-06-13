@@ -2,141 +2,134 @@
 
 ## Overview
 
-The **Notification** app provides a centralized way to inform users about important events across the PMF platform. It is designed for easy integration with other Django apps (KYC, Transaction, Escrow, PaymentTransaction, etc.) and is extensible for future needs.
+The **Notification** app is a reusable Django app that provides a central way to notify users about important events across the PMF platform. It is integrated with other apps including KYC, Transaction, PaymentTransaction, and more. This enables users to receive timely updates about actions that affect them.
+
+---
+
+## Features
+
+- Store notifications for any user-triggered or admin-triggered event.
+- Mark notifications as read/unread.
+- List notifications via a REST API.
+- Extensible notification model (add type, url, etc.).
+- Easy to integrate with other Django apps.
+
+---
+
+## Endpoints
+
+| Endpoint                            | Method | Description                                      | Parameters                         |
+|--------------------------------------|--------|--------------------------------------------------|------------------------------------|
+| `/api/notifications/`                | GET    | List all notifications for the logged-in user     | `read` (optional, filter by read)  |
+| `/api/notifications/<id>/read/`      | PATCH  | Mark a notification as read                       | None (marks `read=True`)           |
+
+**Example request to mark notification as read:**
+
+```http
+PATCH /api/notifications/12/read/
+{
+}
+```
 
 ---
 
 ## Notification Model
 
-**Location:** `apps/Notifications/models.py`
-
-| Field         | Type        | Description                                      |
-|---------------|-------------|--------------------------------------------------|
-| user          | FK to User  | The recipient of the notification                |
-| message       | TextField   | The notification message                         |
-| created_at    | DateTime    | When the notification was created                |
-| read          | Boolean     | Has the user read the notification? (default: no)|
-| type          | CharField   | Optional: category of notification (info, alert) |
-
----
-
-## Endpoints & Parameters
-
-You can create views to expose notifications through the API (for example: `apps/Notifications/views.py`):
-
-- **GET `/api/notifications/`**  
-  **Description:** List all notifications for the authenticated user.  
-  **Query Parameters:**  
-    - `read` (optional): Filter by read/unread status (`true` or `false`).
-
-- **POST `/api/notifications/`**  
-  **Description:** Create a notification (usually used by internal logic, not by end-users).  
-  **Body Parameters:**  
-    - `user` (required): User ID or username (FK to User)
-    - `message` (required): Text message
-    - `type` (optional): Category
-    - _Other fields are auto-set or managed internally_
-
-- **PATCH `/api/notifications/<id>/`**  
-  **Description:** Update a notification (e.g., mark as read).  
-  **Body Parameters:**  
-    - `read`: Boolean
-
-- **DELETE `/api/notifications/<id>/`**  
-  **Description:** Delete a notification.
+| Field      | Type      | Description                                   |
+|------------|-----------|-----------------------------------------------|
+| user       | FK(User)  | Recipient                                     |
+| message    | Text      | Notification message                          |
+| created_at | DateTime  | Time of notification                          |
+| read       | Boolean   | Whether user has read notification            |
+| url        | Text      | (Optional) Deep-link for notification         |
+| type       | Char      | (Optional) Category of notification           |
 
 ---
 
 ## Integration with Other Apps
 
-### What Was Modified
+### What was modified
 
-**In each integrated app, we added logic to create notifications when important events occur:**
-
-| App                  | Event/Action                          | Notification Triggered                                                   |
-|----------------------|---------------------------------------|--------------------------------------------------------------------------|
-| KYC                  | User submits KYC                      | "Your KYC has been submitted and is under review."                       |
-|                      | Admin approves/rejects KYC            | "Your KYC has been approved." / "Your KYC was rejected."                 |
-| Transaction          | Money transfer created                | "Your money transfer ... has been initiated and funds are now in escrow." |
-|                      | Money transfer canceled               | "Your money transfer ... has been canceled."                             |
-| Foreign Currency Req | Request created                       | "Your foreign currency request ... has been submitted and escrowed."      |
-| PaymentTransaction   | Payment completed                     | "Your payment (Transaction ID: ...) of $X has been received and is in escrow." |
+- **KYC app:**  
+  - Notifies user when KYC is submitted and when admin updates status (approved/rejected).
+- **Transaction app:**  
+  - Notifies sender when money transfer is created or canceled.
+  - Notifies receiver/requester on foreign currency request.
+- **PaymentTransaction app:**  
+  - Notifies payer when payment is completed and escrowed.
 
 **How:**  
-- In each app’s view (or business logic), after the event, we added:
-
-    ```python
-    from apps.Notifications.models import Notification
-    # ...
-    try:
-        Notification.objects.create(
-            user=target_user,
-            message="Your custom message"
-        )
-    except Exception:
-        pass  # Do not break the main logic if notifications fail
-    ```
-
----
-
-### What You Can Add
-
-- **Notification types:** Add a `type` field to categorize notifications (info, warning, transaction, kyc, etc.).
-- **Mark as read/unread:** Use the `read` field for user-facing notification panels.
-- **Bulk actions:** Add endpoints or admin actions to mark all as read or delete multiple notifications.
-- **Email/push integration:** Extend model or signals to send emails or push notifications.
-- **User settings:** Allow users to mute certain notification types.
+In each app's view logic, after an important event, we add:
+```python
+from apps.Notifications.models import Notification
+try:
+    Notification.objects.create(
+        user=target_user,
+        message="Your relevant message here"
+    )
+except Exception:
+    pass  # Never block main logic if notification fails
+```
 
 ---
 
 ### How to Add a Notification
 
-1. **Import the model:**
+1. **Import model:**
     ```python
     from apps.Notifications.models import Notification
     ```
 2. **Create a notification:**
     ```python
-    try:
-        Notification.objects.create(
-            user=target_user,
-            message="Your notification message",
-            type="info"  # Optional
-        )
-    except Exception:
-        pass
+    Notification.objects.create(
+        user=target_user,
+        message="Your message",
+        type="info",  # Optional
+        url="/app/detail/123"  # Optional
+    )
     ```
 
 ---
 
 ### How to Delete a Notification
 
-- **In Django Admin:** Go to Notifications, select and delete.
-- **Via API:**  
-  ```http
-  DELETE /api/notifications/<id>/
-  ```
+- **Django Admin:**  
+  Go to Notifications, select, and delete.
+- **(If you add an API endpoint):**  
+  `DELETE /api/notifications/<id>/`
 
 ---
 
 ### How to Mark as Read
 
-- **Via API:**
-  ```http
-  PATCH /api/notifications/<id>/
-  {
-    "read": true
-  }
-  ```
+- **API:**  
+  `PATCH /api/notifications/<id>/read/` with empty or any data.
 
 ---
 
-## Example: Using Notifications in Your Code
+## For Developers
+
+- **Always wrap notification creation in try/except** to avoid breaking business logic.
+- **Document notification triggers** in code comments for clarity.
+- **Add new notification logic as needed and update this README.**
+
+---
+
+## Changelog
+
+- Integrated notifications with KYC, Transaction, PaymentTransaction apps.
+- Added API endpoints for listing and marking notifications as read.
+- Enhanced model for extensibility (type, url, read flag).
+- Added admin integration for managing notifications.
+
+---
+
+## Example Usage
 
 ```python
 from apps.Notifications.models import Notification
 
-# When a user submits KYC
+# In your view after a relevant event:
 try:
     Notification.objects.create(
         user=request.user,
@@ -149,19 +142,6 @@ except Exception:
 
 ---
 
-## For Developers
+## Contact
 
-- **Always wrap `Notification.objects.create()` in try/except** to avoid breaking business logic.
-- **Update docstrings/comments** in views where notifications are fired explaining why.
-- **If you add new notification logic, document it here for your team!**
-
----
-
-## CHANGELOG (What was added/modified)
-
-- Integrated notifications across KYC, Transaction, Escrow, and PaymentTransaction apps.
-- Added try/except error handling for notification dispatch.
-- Improved Notification model to include `read` and `type` fields (optional).
-- Added sample endpoints and usage documentation.
-
----
+For questions or contributions, please contact the PMF backend team.
