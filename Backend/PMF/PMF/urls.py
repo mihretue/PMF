@@ -25,6 +25,5 @@ urlpatterns = [
     path("api/", include("apps.Transaction.urls")),
     path('api/escrow/', include('apps.Escrow.urls')),
     path('api/payments/', include('apps.PaymentTransaction.urls')),
-    path('api/alerts/', include('apps.notifications.urls')),
-    path('api/chat/', include('apps.chatting.urls')),
+    path('api/notifications/', include('apps.Notifications.urls')),
 ]

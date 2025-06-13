@@ -2,8 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework.authtoken.models import Token
 from .serializers import UserSerializer, RegisterSerializer
 from oauth2_provider.models import AccessToken
@@ -12,7 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timezone, timedelta
 from django.utils.timezone import now
-from .models import OTP,User
+from .models import OTP, User
 from twilio.rest import Client
 import hashlib
 import requests
@@ -29,47 +28,47 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.password_validation import validate_password
 
-User = get_user_model()
+# 🟢 Import Notification model
+from apps.Notifications.models import Notification
 
+User = get_user_model()
 logger = logging.getLogger(__name__)
 
-
- 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
-        # Log the incoming payload
         logger.debug(f"Received payload: {request.data}")
 
         try:
-            # Call the parent create method, which handles serialization and validation
             response = super().create(request, *args, **kwargs)
-            # Fetch the user object using the email provided in the request
             user = User.objects.get(email=request.data["email"])
 
-            # Create JWT tokens (access and refresh)
-            refresh = RefreshToken.for_user(user)
+            # 🟢 Notification: Welcome after registration
+            try:
+                Notification.objects.create(
+                    user=user,
+                    message="Welcome! Your account was created successfully."
+                )
+            except Exception as notify_error:
+                logger.warning(f"an error occurred: {notify_error}")
 
-            # Log successful registration
+            refresh = RefreshToken.for_user(user)
             logger.info(f"User registered successfully: {user.email}")
 
-            # Return tokens in the response
             return Response({
                 "access_token": str(refresh.access_token),
                 "refresh_token": str(refresh),
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            # Log the error and payload for debugging
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid()  # Run validation to get errors
             logger.error(f"Registration failed: {str(e)} | Validation errors: {serializer.errors} | Payload: {request.data}")
-            # Re-raise the exception to let DRF handle the response
             raise       
-# Login view supporting both JWT and OAuth2 Authentication
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -89,6 +88,15 @@ class LoginView(APIView):
             try:
                 access_token = AccessToken.objects.get(token=token)
                 user = access_token.user
+                # 🟢 Notification: Successful login (optional)
+                try:
+                    Notification.objects.create(
+                        user=user,
+                        message="You have logged in successfully."
+                    )
+                except Exception as notify_error:
+                    logger.warning(f"Could not create notification: {notify_error}")
+
                 return Response({"message": f"Welcome, {user.full_name}"})
             except AccessToken.DoesNotExist:
                 return Response({"error": "Invalid OAuth2 token"}, status=400)
@@ -98,6 +106,15 @@ class LoginView(APIView):
             user = User.objects.filter(email=email).first()
             if user and user.check_password(password):
                 refresh = RefreshToken.for_user(user)
+                # 🟢 Notification: Successful login (optional)
+                try:
+                    Notification.objects.create(
+                        user=user,
+                        message="You have logged in successfully."
+                    )
+                except Exception as notify_error:
+                    logger.warning(f"Could not create notification: {notify_error}")
+
                 return Response({
                     'access_token': str(refresh.access_token),
                     'refresh_token': str(refresh),
@@ -125,7 +142,6 @@ class LogoutView(APIView):
         except (TokenError, InvalidToken) as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# User profile view that retrieves user information for authenticated users
 class UserProfileView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -134,11 +150,8 @@ class UserProfileView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
-
-
 def generate_otp():
     return str(random.randint(100000,999999))
-
 
 class GenerateOTPView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -171,7 +184,6 @@ class GenerateOTPView(APIView):
 
         otp = generate_otp()  # plain 6-digit OTP
 
-        # ✅ Save plaintext, let model hash it
         OTP.objects.create(user=user, code=otp, expires_at=now() + timedelta(minutes=5))
 
         message = f"Your OTP is {otp}. It expires in 5 minutes."
@@ -183,11 +195,6 @@ class GenerateOTPView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
- 
-
-
-
 class VerifyOTPView(APIView):
     def post(self, request):
         email = request.data.get("email")
@@ -197,29 +204,31 @@ class VerifyOTPView(APIView):
         if not user:
             return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the latest unused, unexpired OTP
         otp_instance = OTP.objects.filter(user=user, is_used=False, expires_at__gt=now()).order_by("-created_at").first()
         if not otp_instance:
             return Response({"error": "No OTP found or it has expired."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Use the model's verify method to check OTP
         if not otp_instance.verify_otp(otp_input):
             return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Mark OTP as used
         otp_instance.is_used = True
         otp_instance.save()
 
-        # Mark user as verified
         user.is_verified = True
         user.save()
 
-        # Remove OTP from cache if applicable
         cache.delete(email)
 
+        # 🟢 Notification: OTP verified
+        try:
+            Notification.objects.create(
+                user=user,
+                message="Your account has been verified via OTP."
+            )
+        except Exception as notify_error:
+            logger.warning(f"Could not create notification: {notify_error}")
+
         return Response({"message": "OTP verified successfully!"}, status=status.HTTP_200_OK)
-
-
 
 class ResendOTPView(APIView):
     def post(self, request):
@@ -229,25 +238,19 @@ class ResendOTPView(APIView):
         if not user:
             return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if the OTP is still valid
         otp_instance = OTP.objects.filter(user=user, is_used=False, expires_at__gt=now()).first()
         if otp_instance:
             return Response({"error": "An OTP has already been sent. Please wait before requesting another."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-        # Generate and send a new OTP
         return GenerateOTPView.as_view()(request)
-        # return Response({"message": "OTP resent successfully!"}, status=status.HTTP_200_OK)
-
 
 class GetUserProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user = request.user  # DRF resolves this via the token
+        user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    
     
 class ProfilePictureUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -263,6 +266,14 @@ class ProfilePictureUploadView(APIView):
 
             image_url = user.profile_picture.url
 
+            # 🟢 Notification: Profile picture updated
+            try:
+                Notification.objects.create(
+                    user=user,
+                    message="Your profile picture was updated."
+                )
+            except Exception as notify_error:
+                logger.warning(f"Could not create notification: {notify_error}")
 
             return Response({
                 "message": "Profile picture updated successfully.",
@@ -288,7 +299,6 @@ class PasswordResetRequestView(APIView):
             )
         return Response({"message": "If this email exists, a reset link was sent."})
     
-    
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
 
@@ -306,7 +316,6 @@ class PasswordResetConfirmView(APIView):
         if not new_password:
             return Response({"error": "New password is required."}, status=400)
 
-        # ✅ Validate password strength
         try:
             validate_password(new_password, user=user)
         except DjangoValidationError as e:
@@ -314,9 +323,18 @@ class PasswordResetConfirmView(APIView):
 
         user.set_password(new_password)
         user.save()
+
+        # 🟢 Notification: Password reset
+        try:
+            Notification.objects.create(
+                user=user,
+                message="Your password was reset successfully."
+            )
+        except Exception as notify_error:
+            logger.warning(f"Could not create notification: {notify_error}")
+
         return Response({"message": "Password has been reset successfully."})
    
-    
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -333,4 +351,14 @@ class ChangePasswordView(APIView):
         
         user.set_password(new_password)
         user.save()
+
+        # 🟢 Notification: Password change
+        try:
+            Notification.objects.create(
+                user=user,
+                message="Your password was changed successfully."
+            )
+        except Exception as notify_error:
+            logger.warning(f"Could not create notification: {notify_error}")
+
         return Response({"message": "Password updated successfully."})
