@@ -60,32 +60,42 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
-    'oauth2_provider',  
-    'rest_framework_simplejwt', 
+    'rest_framework.authtoken',
+    'oauth2_provider',
+    'rest_framework_simplejwt',   
     "django_celery_beat",
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     
     # apps
+    'channels', 
     'apps.accounts',
     'apps.KYC',
     'apps.Transaction',
     'apps.Escrow',
-    'apps.PaymentTransaction'
+    'apps.PaymentTransaction',
+  
+    
+    'apps.notifications',
+    'apps.chatting',
     
     
+
     
     
+
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
        
         # 'rest_framework.permissions.AllowAny',
   
@@ -226,6 +236,19 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
+
+# ASGI application
+ASGI_APPLICATION = 'PMF.asgi.application'
+
+# Channels Layer Configuration 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.0", 6379)], 
+        },
+    },
+}
 # settings.py
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -241,3 +264,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mihretuendeshaw84@gmail.com'
 EMAIL_HOST_PASSWORD = 'qymy eawv mzuz kuzq'  # use an app password if using Gmail
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+

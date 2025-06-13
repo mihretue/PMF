@@ -14,7 +14,7 @@ class Escrow(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     # transaction = GenericForeignKey('content_type', 'object_id')  # Can link to MoneyTransfer or ForeignCurrencyRequest
-
+    content_object = GenericForeignKey('content_type', 'object_id') 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)

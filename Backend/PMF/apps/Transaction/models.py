@@ -46,14 +46,19 @@ class MoneyTransfer(models.Model):
 
 
 class ForeignCurrencyRequest(models.Model):
-    """
-    Model for requesting foreign currency
-    """
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="foreign_currency_requests")
     amount_requested = models.DecimalField(max_digits=12, decimal_places=2)
     currency_type = models.CharField(max_length=10)
-    urgency_level = models.CharField(max_length=50, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium')
+    payment_method = models.CharField(max_length=50, null=True, blank=True)
     purpose = models.CharField(max_length=255)
+    urgency_level = models.CharField(max_length=50, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium')
+    
+    # New fields for recipient
+    recipient_full_name = models.CharField(max_length=255)
+    recipient_account_number = models.CharField(max_length=50, null=True, blank=True)
+    recipient_sort_code = models.CharField(max_length=20, null=True, blank=True)
+    
+    transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=10, choices=[
         ('pending', 'Pending'), 
         ('approved', 'Approved'), 
@@ -64,6 +69,9 @@ class ForeignCurrencyRequest(models.Model):
     def __str__(self):
         return f"Foreign Currency Request {self.id} by {self.requester}"
 
+    def calculate_transaction_fee(self):
+        """Example flat 2% fee"""
+        return self.amount_requested * Decimal(0.02)
 
 class ExchangeRate(models.Model):
     """
@@ -82,7 +90,7 @@ class ExchangeRate(models.Model):
 class Wallet(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     account_number = models.CharField(max_length=100, unique=True)
-    balance = models.DecimalField(max_digits=12, decimal_places=2)
+    balance = models.DecimalField(max_digits=12, decimal_places=2,default=0.00)
     currency = models.CharField(max_length=10, default="USD")
 
     def __str__(self):

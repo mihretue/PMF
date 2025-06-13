@@ -1,4 +1,5 @@
 """
+
 URL configuration for PMF project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -21,8 +22,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/', include("apps.accounts.urls")),
     path("api/kyc/", include("apps.KYC.urls")),
-    path("api/",include("apps.Transaction.urls")),
+    path("api/", include("apps.Transaction.urls")),
     path('api/escrow/', include('apps.Escrow.urls')),
     path('api/payments/', include('apps.PaymentTransaction.urls')),
-
+    path('api/alerts/', include('apps.notifications.urls')),
+    path('api/chat/', include('apps.chatting.urls')),
 ]
