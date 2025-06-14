@@ -14,7 +14,7 @@ class KYCSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user', 'created_at', 'updated_at']
         # Removed 'verification_status' to allow admin updates
-
+        
     def validate_document_type(self, value):
         valid_types = [choice[0] for choice in KYC.DOCUMENT_TYPES]
         if value not in valid_types:
