@@ -110,6 +110,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
     queryset = ForeignCurrencyRequest.objects.all()
     serializer_class = ForeignCurrencyRequestSerializer
+    permission_classes = [IsReceiver]
 
     def perform_create(self, serializer):
         request = self.request

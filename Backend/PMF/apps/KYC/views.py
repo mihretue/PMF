@@ -13,7 +13,7 @@ class KYCCreateView(APIView):
     def post(self, request):
         serializer = KYCSerializer(data=request.data, context={'request': request})  # 👈 pass context here
         if serializer.is_valid():
-            serializer.save()  # 👈 no need for user=request.user
+            serializer.save(user=request.user)  # 👈 no need for user=request.user
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
