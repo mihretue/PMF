@@ -8,6 +8,7 @@ from .services import get_live_exchange_rate
 from django.db.models import JSONField
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import now, timedelta
 
 class BaseTransaction(models.Model):
     STATUS_CHOICES = [
@@ -204,3 +205,19 @@ class DailyExchangeRate(models.Model):
 
     def __str__(self):
         return f"Rates on {self.date}"
+    
+
+
+class CurrencyAlert(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    base_currency = models.CharField(max_length=10)
+    target_currency = models.CharField(max_length=10)
+    min_rate = models.DecimalField(max_digits=12, decimal_places=4)
+    max_rate = models.DecimalField(max_digits=12, decimal_places=4)
+    is_active = models.BooleanField(default=True)
+    notify_interval = models.DurationField(default=timedelta(hours=1))  # New field  
+    created_at = models.DateTimeField(auto_now_add=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.email} Alert for {self.base_currency}/{self.target_currency} between {self.min_rate}-{self.max_rate}"

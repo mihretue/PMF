@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MoneyTransfer, Wallet,ForeignCurrencyRequest, ExchangeRate, TransactionLog, DailyExchangeRate
+from .models import MoneyTransfer, Wallet,ForeignCurrencyRequest, ExchangeRate, TransactionLog, DailyExchangeRate, CurrencyAlert
 
 class MoneyTransferSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,3 +61,12 @@ class DailyExchangeRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyExchangeRate
         fields = ['id', 'date', 'base_code', 'rates', 'created_at']
+        
+class CurrencyAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurrencyAlert
+        fields = [
+            'id', 'base_currency', 'target_currency', 'min_rate', 'max_rate',
+            'notify_interval', 'is_active', 'created_at', 'notified_at'
+        ]
+        read_only_fields = ['created_at', 'notified_at']
