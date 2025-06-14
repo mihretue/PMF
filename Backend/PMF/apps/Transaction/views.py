@@ -1,9 +1,9 @@
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, APIView
 from rest_framework.exceptions import PermissionDenied
-from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet
-from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer,TransactionLogSerializer
+from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet, DailyExchangeRate
+from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer,TransactionLogSerializer, DailyExchangeRateSerializer
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
 from .services import get_live_exchange_rate
 from decimal import Decimal
@@ -11,7 +11,9 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
 from .signals import create_wallet_for_new_user
-
+from .services import get_live_exchange_rate
+from datetime import datetime
+from django.db.models import F
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -219,4 +221,87 @@ class MyTransactionViewSet(viewsets.ViewSet):
         return Response({
             "money_transfers": transfer_serializer.data,
             "foreign_currency_requests": request_serializer.data
+        })
+        
+        
+        
+
+
+class ExchangeRateView(viewsets.ViewSet):
+    queryset = ExchangeRate.objects.all()
+    serializer_class = ExchangeRateSerializer
+
+    @action(detail=False, methods=['get'], url_path='live')
+    def live_exchange_rate(self, request):
+        currency_from = request.query_params.get("from")
+        currency_to = request.query_params.get("to")
+
+        if not currency_from or not currency_to:
+            return Response(
+                {"error": "Both 'from' and 'to' query parameters are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        rate = get_live_exchange_rate(currency_from.upper(), currency_to.upper())
+        if rate is None:
+            return Response(
+                {"error": "Exchange rate not found for the provided currencies."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response({
+            "from": currency_from.upper(),
+            "to": currency_to.upper(),
+            "rate": rate
+        }, status=status.HTTP_200_OK)
+        
+        
+class DailyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = DailyExchangeRate.objects.all().order_by('-date')
+    serializer_class = DailyExchangeRateSerializer
+
+    @action(detail=False, methods=['get'], url_path='history')
+    def history(self, request):
+        base = request.query_params.get('base')
+        target = request.query_params.get('target')
+        date_from = request.query_params.get('from')
+        date_to = request.query_params.get('to')
+
+        if not all([base, target, date_from, date_to]):
+            return Response(
+                {"detail": "Missing required query params: base, target, from, to"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from_date = datetime.strptime(date_from, "%Y-%m-%d").date()
+            to_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+        except ValueError:
+            return Response(
+                {"detail": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        rates_qs = DailyExchangeRate.objects.filter(
+            date__range=(from_date, to_date)
+        ).order_by('date')
+
+        if not rates_qs.exists():
+            return Response({"detail": "No rates found for given dates."}, status=404)
+
+        history = []
+        for rate_obj in rates_qs:
+            base_rate = rate_obj.rates.get(base)
+            target_rate = rate_obj.rates.get(target)
+            if base_rate and target_rate:
+                exchange_rate = target_rate / base_rate
+                history.append({
+                    "date": rate_obj.date,
+                    "rate": exchange_rate
+                })
+
+        return Response({
+            "base": base,
+            "target": target,
+            "history": history
         })

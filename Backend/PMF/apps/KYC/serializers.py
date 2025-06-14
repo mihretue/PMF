@@ -44,8 +44,9 @@ class KYCSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        document_type = data.get('document_type')
-        document_back = data.get('document_back')
+        document_type = data.get('document_type') or (self.instance.document_type if self.instance else None)
+        document_back = data.get('document_back') or (self.instance.document_back if self.instance else None)
+        document_front = data.get('document_front') or (self.instance.document_front if self.instance else None)
 
         # Document back validation
         if document_type in ['national_id', 'driver_license', 'BRP'] and not document_back:
@@ -54,12 +55,12 @@ class KYCSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"document_back": "Passport does not require a back document."})
 
         # Ensure document_front is provided
-        if not data.get('document_front'):
+        if not document_front:
             raise serializers.ValidationError({"document_front": "This field is required."})
 
-        # Check for existing KYC record
+        # Check for existing KYC record on create only
         request = self.context.get('request')
-        if request and hasattr(request, 'user') and self.instance is None:  # Only on create
+        if request and hasattr(request, 'user') and self.instance is None:
             if KYC.objects.filter(user=request.user).exists():
                 raise serializers.ValidationError({"user": "A KYC record already exists for this user."})
 

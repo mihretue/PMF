@@ -4,6 +4,10 @@ from decimal import Decimal
 from django.utils.timezone import now
 from apps.Escrow.models import Escrow
 from django.core.validators import RegexValidator
+from .services import get_live_exchange_rate
+from django.db.models import JSONField
+from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 
 class BaseTransaction(models.Model):
     STATUS_CHOICES = [
@@ -50,8 +54,9 @@ class MoneyTransfer(BaseTransaction):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency_type = models.CharField(max_length=10)
 
-    transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    
+    transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,default=0.00)
+    bank_fee = models.DecimalField(max_digits=12, decimal_places=2,null=True,blank=True)
+    pmf_fee = models.DecimalField(max_digits=12, decimal_places=2,null=True,blank=True)
     PAYMENT_CHOICES = [
         ('paypal', 'PayPal'),
         ('bank_transfer', 'Bank Transfer'),
@@ -66,9 +71,14 @@ class MoneyTransfer(BaseTransaction):
     def __str__(self):
         return f"Money Transfer {self.id} - {self.sender} to {self.recipient_name}"
 
-    def calculate_transaction_fee(self):
-        """Example transaction fee: 2% of the transaction amount."""
-        return self.amount * Decimal(0.02)
+    def calculate_bank_fee(self):
+        return (self.amount * Decimal('0.005')).quantize(Decimal('0.01'))  # 0.5%
+
+    def calculate_pmf_fee(self):
+        return (self.amount * Decimal('0.015')).quantize(Decimal('0.01'))  # 1.5%
+
+    def total_fee(self):
+        return (self.bank_fee or Decimal('0.00')) + (self.pmf_fee or Decimal('0.00'))
 
     def initiate_escrow(self):
         with transaction.atomic():
@@ -83,8 +93,12 @@ class MoneyTransfer(BaseTransaction):
                 self.save()
             return self.escrow
     def save(self, *args, **kwargs):
+        if not self.bank_fee:
+            self.bank_fee = self.calculate_bank_fee()
+        if not self.pmf_fee:
+            self.pmf_fee = self.calculate_pmf_fee()
         if not self.transaction_fee:
-            self.transaction_fee = self.calculate_transaction_fee()
+            self.transaction_fee = self.total_fee()
         super().save(*args, **kwargs)
 
 class ForeignCurrencyRequest(BaseTransaction):
@@ -94,21 +108,29 @@ class ForeignCurrencyRequest(BaseTransaction):
     payment_method = models.CharField(max_length=50, null=True, blank=True)
     purpose = models.CharField(max_length=255)
     urgency_level = models.CharField(max_length=50, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium')
-    
+    bank_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    pmf_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
     # New fields for recipient
     recipient_full_name = models.CharField(max_length=255)
     recipient_account_number = models.CharField(max_length=50, null=True, blank=True)
     recipient_sort_code = models.CharField(max_length=20, null=True, blank=True)
-    
-    transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    exchange_rate = models.DecimalField(max_digits=12,decimal_places=6, null=True, blank=True)
+    transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Foreign Currency Request {self.id} by {self.requester}"
 
-    def calculate_transaction_fee(self):
-        """Example flat 2% fee"""
-        return self.amount_requested * Decimal(0.02)
+    def calculate_bank_fee(self):
+        return (self.amount_requested * Decimal('0.005')).quantize(Decimal('0.01'))
+
+    def calculate_pmf_fee(self):
+        return (self.amount_requested * Decimal('0.015')).quantize(Decimal('0.01'))
+
+    def total_fee(self):
+        return (self.bank_fee or Decimal('0.00')) + (self.pmf_fee or Decimal('0.00'))
+
     
     def initiate_escrow(self):
         with transaction.atomic():
@@ -124,8 +146,17 @@ class ForeignCurrencyRequest(BaseTransaction):
             return self.escrow
         
     def save(self, *args, **kwargs):
+        if not self.bank_fee:
+            self.bank_fee = self.calculate_bank_fee()
+        if not self.pmf_fee:
+            self.pmf_fee = self.calculate_pmf_fee()
         if not self.transaction_fee:
-            self.transaction_fee = self.calculate_transaction_fee()
+            self.transaction_fee = self.total_fee()
+        
+        if not self.exchange_rate:
+            rate = get_live_exchange_rate("ETB", self.currency_type)
+            if rate:
+                self.exchange_rate = rate
         super().save(*args, **kwargs)
         
 class ExchangeRate(models.Model):
@@ -163,3 +194,13 @@ class TransactionLog(models.Model):
 
     def __str__(self):
         return f"{self.amount} from {self.source_account} to {self.destination_account} @ {self.timestamp}"
+
+
+class DailyExchangeRate(models.Model):
+    date = models.DateField(unique=True)
+    base_code = models.CharField(max_length=10)
+    rates = JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Rates on {self.date}"
