@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MoneyTransfer, Wallet,ForeignCurrencyRequest, ExchangeRate, TransactionLog
+from .models import MoneyTransfer, Wallet,ForeignCurrencyRequest, ExchangeRate, TransactionLog, DailyExchangeRate, CurrencyAlert
 
 class MoneyTransferSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,7 +10,7 @@ class MoneyTransferSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Calculate transaction fee & exchange rate before saving."""
         money_transfer = MoneyTransfer(**validated_data)
-        money_transfer.transaction_fee = money_transfer.calculate_transaction_fee()
+        money_transfer.transaction_fee = money_transfer.total_fee()
         money_transfer.status = "pending"  # Default status
         money_transfer.save()
         return money_transfer
@@ -34,6 +34,7 @@ class ForeignCurrencyRequestSerializer(serializers.ModelSerializer):
             'recipient_account_number',
             'recipient_sort_code',
             'transaction_fee',
+            'exchange_rate',
             'status',
             'created_at'
         ]
@@ -55,3 +56,17 @@ class TransactionLogSerializer(serializers.ModelSerializer):
         model = TransactionLog
         fields = '__all__'
         
+        
+class DailyExchangeRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyExchangeRate
+        fields = ['id', 'date', 'base_code', 'rates', 'created_at']
+        
+class CurrencyAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurrencyAlert
+        fields = [
+            'id', 'base_currency', 'target_currency', 'min_rate', 'max_rate',
+            'notify_interval', 'is_active', 'created_at', 'notified_at'
+        ]
+        read_only_fields = ['created_at', 'notified_at']

@@ -1,6 +1,6 @@
 from celery import shared_task
 from .utils import fetch_exchange_rates
-from .models import ExchangeRate
+from .models import ExchangeRate, CurrencyAlert
 from django.utils.timezone import now
 
 @shared_task
@@ -19,3 +19,27 @@ def update_exchange_rates_task():
         )
 
     return "Exchange Rates Updated Successfully"
+
+
+@shared_task
+def check_currency_alerts():
+    alerts = CurrencyAlert.objects.filter(is_active=True)
+    for alert in alerts:
+        rate = get_live_exchange_rate(alert.base_currency, alert.target_currency)
+        if rate:
+            should_notify = False
+            if alert.notified_at is None:
+                should_notify = True
+            elif (now() - alert.notified_at) >= alert.notify_interval:
+                should_notify = True
+
+            if alert.min_rate <= rate <= alert.max_rate and should_notify:
+                send_mail(
+                    'Currency Alert Triggered!',
+                    f'The {alert.base_currency}/{alert.target_currency} rate is now {rate}, within your set range of {alert.min_rate}-{alert.max_rate}.',
+                    'from@example.com',
+                    [alert.user.email],
+                    fail_silently=False,
+                )
+                alert.notified_at = now()
+                alert.save()
