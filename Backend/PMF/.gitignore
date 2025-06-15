@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+
+# Django migrations
+*/migrations/
+
+# VS Code settings
+.vscode/
+
+# Local env files
+.env
+
+# Logs
+*.log
+
+# SQLite database files
+*.sqlite3
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Pytest
+.cache/
+
+# MyPy
+.mypy_cache/
+
+# PyInstaller
+dist/
+build/
+
+# Egg files
+*.egg-info/
+*.egg
+.eggs/
