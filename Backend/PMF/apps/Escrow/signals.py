@@ -3,13 +3,10 @@ from django.dispatch import receiver
 from apps.Transaction.models import MoneyTransfer
 from django.contrib.contenttypes.models import ContentType
 from .models import Escrow
-<<<<<<< HEAD
 from apps.Notifications.models import Notification
-=======
 import threading 
 
 _local = threading.local()
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
 
 @receiver(post_save, sender=MoneyTransfer)
 def create_escrow_for_transfer(sender, instance, created, **kwargs):
@@ -20,7 +17,6 @@ def create_escrow_for_transfer(sender, instance, created, **kwargs):
             amount=instance.amount,
             status='in_escrow'
         )
-<<<<<<< HEAD
         # 🟢 Notify the sender (or receiver, depending on your logic)
         try:
             Notification.objects.create(
@@ -29,7 +25,6 @@ def create_escrow_for_transfer(sender, instance, created, **kwargs):
             )
         except Exception as e:
             pass  # Don't block main flow for notification errors
-=======
 
 
 @receiver(post_save, sender=Escrow)
@@ -45,4 +40,3 @@ def update_related_transactions(sender, instance, **kwargs):
             instance.content_object.update_from_escrow()
     finally:
         _local.updating = False
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28

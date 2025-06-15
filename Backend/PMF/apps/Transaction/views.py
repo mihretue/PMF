@@ -1,16 +1,13 @@
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
-<<<<<<< HEAD
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer, TransactionLogSerializer
-=======
 from rest_framework.decorators import action, api_view, APIView
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet, DailyExchangeRate,CurrencyAlert
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer,TransactionLogSerializer, DailyExchangeRateSerializer,CurrencyAlertSerializer
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
 from .services import get_live_exchange_rate
 from decimal import Decimal
@@ -18,13 +15,10 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
 from .signals import create_wallet_for_new_user
-<<<<<<< HEAD
 from apps.Notifications.models import Notification  # 🟢 Import Notification
-=======
 from .services import get_live_exchange_rate
 from datetime import datetime
 from django.db.models import F
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -175,13 +169,10 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
             "USD": usd_to_etb,
             "EUR": eur_to_etb,
         }
-<<<<<<< HEAD
         return Response(data)      
 
-=======
         return Response(data)  
         
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
 class TransactionFeeViewSet(viewsets.ViewSet):
     """
     API for calculating transaction fees.
@@ -193,12 +184,10 @@ class TransactionFeeViewSet(viewsets.ViewSet):
         amount = Decimal(request.GET.get('amount', 0))
         fee = amount * Decimal('0.02')
         return Response({'transaction_fee': str(fee)})
-<<<<<<< HEAD
 
 class MyTransactionViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
-=======
     
     
     
@@ -206,39 +195,30 @@ class MyTransactionViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 # permission_classes = [IsSender]
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
     @action(detail=False, methods=['get'], url_path='money-transfers',permission_classes=[IsSender])
     def money_transfers(self, request): 
         transfers = MoneyTransfer.objects.filter(sender=request.user).order_by('-created_at')
         serializer = MoneyTransferSerializer(transfers, many=True)
         return Response(serializer.data)
-<<<<<<< HEAD
 
-=======
 # permission_classes = [IsReceiver]
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
     @action(detail=False, methods=['get'], url_path='foreign-requests', permission_classes=[IsReceiver])
     def foreign_requests(self, request):
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user).order_by('-created_at')
         serializer = ForeignCurrencyRequestSerializer(requests, many=True)
         return Response(serializer.data)
-<<<<<<< HEAD
 
-=======
 # permission_classes = [IsAuthenticated]
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
     @action(detail=False, methods=['get'], url_path='all')
     def all_transactions(self, request):
         transfers = MoneyTransfer.objects.filter(sender=request.user)
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user)
-<<<<<<< HEAD
         transfer_serializer = MoneyTransferSerializer(transfers, many=True)
         request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
         return Response({
             "money_transfers": transfer_serializer.data,
             "foreign_currency_requests": request_serializer.data
         })
-=======
 
         transfer_serializer = MoneyTransferSerializer(transfers, many=True)
         request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
@@ -370,4 +350,3 @@ class DeleteCurrencyAlertView(viewsets.ViewSet):
         
         alert.delete()
         return Response({"message": "Alert deleted."}, status=status.HTTP_204_NO_CONTENT)
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28

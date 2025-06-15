@@ -27,14 +27,11 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.password_validation import validate_password
-<<<<<<< HEAD
 
 # 🟢 Import Notification model
 from apps.Notifications.models import Notification
-=======
 from .permissions import IsAdmin
 User = get_user_model()
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -356,7 +353,6 @@ class ChangePasswordView(APIView):
         
         user.set_password(new_password)
         user.save()
-<<<<<<< HEAD
 
         # 🟢 Notification: Password change
         try:
@@ -368,7 +364,6 @@ class ChangePasswordView(APIView):
             logger.warning(f"Could not create notification: {notify_error}")
 
         return Response({"message": "Password updated successfully."})
-=======
         return Response({"message": "Password updated successfully."})
     
 class TotalUserView(APIView):
@@ -379,4 +374,3 @@ class TotalUserView(APIView):
         return Response({
             "total_users": total_users
         }, status=status.HTTP_200_OK)    
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28

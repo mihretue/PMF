@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 # Notifications App
->>>>>>> Mihretu/Integrate
 
 This is a Django app for managing user notifications with a simple REST API.
 
@@ -34,7 +30,6 @@ Base URL: `/api/notifications/`
 
 ## Example Usage
 
-<<<<<<< HEAD
 **Endpoint:** `ws://your-api-domain/ws/chat/{conversation_id}/`
 * **Purpose:** Establish a real-time, bi-directional connection for sending and receiving chat messages instantly.
 * **Data (Sending from Frontend):**
@@ -58,7 +53,6 @@ Base URL: `/api/notifications/`
     * User must be authenticated (typically by passing a token in the WebSocket URL query params like `ws://.../?token=YOUR_JWT`).
     * User must be a participant in the specified `conversation_id`.
     * `conversation_id` must exist.
-=======
 # PMF Notification System
 
 ## Overview
@@ -89,7 +83,6 @@ The **Notification** app is a reusable Django app that provides a central way to
 ```http
 PATCH /api/notifications/12/read/
 {
-=======
 ### List Notifications
 
 ```http
@@ -128,13 +121,11 @@ Authorization: Token <your-token>
   "message": "You have a new message",
   "read": true,
   "created_at": "2025-06-13T00:53:00Z"
->>>>>>> Mihretu/Integrate
 }
 ```
 
 ---
 
-<<<<<<< HEAD
 ## Notification Model
 
 | Field      | Type      | Description                                   |
@@ -247,8 +238,6 @@ except Exception:
 ## Contact
 
 For questions or contributions, please contact the PMF backend team.
->>>>>>> 13dac2c4de16da752f632670d7651b12f3f709e5
-=======
 ### Delete Notification
 
 ```http
@@ -287,4 +276,3 @@ Authorization: Token <your-token>
 ## License
 
 MIT License.
->>>>>>> Mihretu/Integrate

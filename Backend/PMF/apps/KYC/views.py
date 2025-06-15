@@ -16,7 +16,6 @@ class KYCCreateView(APIView):
     def post(self, request):
         serializer = KYCSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-<<<<<<< HEAD
             kyc_instance = serializer.save()
             # 🟢 Notify user on KYC submission
             try:
@@ -26,9 +25,7 @@ class KYCCreateView(APIView):
                 )
             except Exception:
                 pass
-=======
             serializer.save(user=request.user)  # 👈 no need for user=request.user
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -50,7 +47,6 @@ class KYCAdminUpdateView(APIView):
     permission_classes = [IsAdmin]
 
     def patch(self, request, kyc_id):
-<<<<<<< HEAD
         kyc = KYC.objects.get(id=kyc_id)
         old_status = kyc.verification_status
         kyc.verification_status = request.data.get("verification_status", kyc.verification_status)
@@ -74,7 +70,6 @@ class KYCAdminUpdateView(APIView):
                 pass
 
         return Response({"message": "KYC status updated successfully"}, status=status.HTTP_200_OK)
-=======
         try:
             kyc = KYC.objects.get(id=kyc_id)
         except KYC.DoesNotExist:
@@ -89,7 +84,6 @@ class KYCAdminUpdateView(APIView):
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 #Put request
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
 
 class KYCUpdateView(APIView):
     permission_classes = [IsSenderOrReceiver]
@@ -142,9 +136,7 @@ class UserKYCDetailView(APIView):
             serializer = KYCSerializer(kyc)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except KYC.DoesNotExist:
-<<<<<<< HEAD
             return Response({"error": "KYC record not found."}, status=status.HTTP_404_NOT_FOUND)
-=======
             return Response({"error": "KYC record not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -171,4 +163,3 @@ class KYCTotalsView(APIView):
             "approved_total": totals['approved'],
             "rejected_total": totals['rejected']
         }, status=status.HTTP_200_OK)
->>>>>>> 9ea46b6d192e059935e587489c47d02cb0c95f28
