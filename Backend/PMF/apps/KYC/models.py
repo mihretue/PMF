@@ -19,7 +19,7 @@ class KYC(models.Model):
     document_front = models.FileField(upload_to='kyc_documents/')
     document_back = models.FileField(upload_to='kyc_documents/', null=True, blank=True)  # Optional
     verification_status = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')],
         default='pending'
     )
