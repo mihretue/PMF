@@ -34,7 +34,7 @@ class ForeignCurrencyRequestSerializer(serializers.ModelSerializer):
             'recipient_account_number',
             'recipient_sort_code',
             'transaction_fee',
-            'exchange_rate'
+            'exchange_rate',
             'status',
             'created_at'
         ]
