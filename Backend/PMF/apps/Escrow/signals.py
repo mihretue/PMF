@@ -31,3 +31,9 @@ def update_related_transactions(sender, instance, **kwargs):
             instance.content_object.update_from_escrow()
     finally:
         _local.updating = False
+        
+        
+@receiver(post_save, sender=Escrow)
+def update_related_transaction(sender, instance, **kwargs):
+    if instance.content_object:
+        instance.content_object.update_from_escrow()

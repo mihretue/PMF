@@ -18,6 +18,7 @@ from django.utils.timezone import now, timedelta
 from itertools import chain
 
 
+
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
     API for handling Money Transfers.
@@ -111,6 +112,22 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
         money_transfer.save()
         return Response({"message": "Transaction canceled successfully."}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['patch'], url_path='upload-proof')
+    def upload_proof(self, request, pk=None):
+        transaction = self.get_object()
+        file = request.FILES.get('file')
+
+        if not file:
+            return Response({'error': 'Proof file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        transaction.proof_document = file
+        transaction.save()
+
+        escrow = transaction.initiate_escrow()
+        escrow.status = 'funds_held'
+        escrow.save()  # triggers update_from_escrow()
+
+        return Response({'message': 'Proof uploaded and transaction moved to escrow.'}, status=status.HTTP_200_OK)
 
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
     queryset = ForeignCurrencyRequest.objects.all()
@@ -160,6 +177,24 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
             return ForeignCurrencyRequest.objects.all()
         return ForeignCurrencyRequest.objects.filter(requester=user)
 
+    @action(detail=True, methods=['patch'], url_path='upload-proof')
+    def upload_proof(self, request, pk=None):
+        transaction = self.get_object()
+        file = request.FILES.get('file')
+
+        if not file:
+            return Response({'error': 'Proof file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        transaction.proof_document = file
+        transaction.save()
+
+        escrow = transaction.initiate_escrow()
+        escrow.status = 'funds_held'
+        escrow.save()  # triggers update_from_escrow()
+
+        return Response({'message': 'Proof uploaded and transaction moved to escrow.'}, status=status.HTTP_200_OK)
+    
+    
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExchangeRate.objects.all()
     serializer_class = ExchangeRateSerializer
@@ -169,8 +204,9 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
         # Fetch only USD→ETB and EUR→ETB
         usd_to_etb = get_live_exchange_rate("USD", "ETB")
         eur_to_etb = get_live_exchange_rate("EUR", "ETB")
+        gbp_to_etb = get_live_exchange_rate("GBP", "ETB")
 
-        if not usd_to_etb or not eur_to_etb:
+        if not usd_to_etb or not eur_to_etb or not gbp_to_etb:
             return Response(
                 {"error": "Exchange rates unavailable"}, 
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
@@ -180,6 +216,7 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
         data = {
             "USD": usd_to_etb,
             "EUR": eur_to_etb,
+            "GBP":gbp_to_etb,
         }
         return Response(data)  
         

@@ -9,6 +9,15 @@ from django.db.models import JSONField
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now, timedelta
+from cloudinary.models import CloudinaryField
+
+
+CURRENCY_CHOICES = [
+    ('USD', 'US Dollar'),
+    ('EUR', 'Euro'),
+    ('ETB', 'Ethiopian Birr'),
+    ('GBP', 'British Pound'),
+]
 
 class BaseTransaction(models.Model):
     STATUS_CHOICES = [
@@ -23,7 +32,7 @@ class BaseTransaction(models.Model):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     escrow = models.OneToOneField('Escrow.Escrow', null=True, blank=True, on_delete=models.SET_NULL)
-    
+    proof_document = CloudinaryField('proof_document', blank=True, null=True)
     class Meta:
         abstract = True
 
@@ -53,7 +62,7 @@ class MoneyTransfer(BaseTransaction):
     recipient_phone_number = models.CharField(max_length=20)
     recipient_bank_account = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    currency_type = models.CharField(max_length=10)
+    currency_type = models.CharField(max_length=10,choices=CURRENCY_CHOICES)
 
     transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,default=0.00)
     bank_fee = models.DecimalField(max_digits=12, decimal_places=2,null=True,blank=True)
@@ -105,7 +114,7 @@ class MoneyTransfer(BaseTransaction):
 class ForeignCurrencyRequest(BaseTransaction):
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="foreign_currency_requests")
     amount_requested = models.DecimalField(max_digits=12, decimal_places=2)
-    currency_type = models.CharField(max_length=10)
+    currency_type = models.CharField(max_length=10, choices=CURRENCY_CHOICES)
     PAYMENT_CHOICES = [
         ('telebirr', 'TeleBirr'),
         ('CBE', 'CBE'),
@@ -123,6 +132,7 @@ class ForeignCurrencyRequest(BaseTransaction):
     recipient_sort_code = models.CharField(max_length=20, null=True, blank=True)
     exchange_rate = models.DecimalField(max_digits=12,decimal_places=6, null=True, blank=True)
     transaction_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,default=0.00)
+    bank_name = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -1,8 +1,9 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 class Escrow(models.Model):
     STATUS_CHOICES = [
@@ -29,6 +30,7 @@ class Escrow(models.Model):
         constraints = [
             models.CheckConstraint(check=models.Q(amount__gt=0), name='positive_amount')
         ]
+    
     def clean(self):
         if self.amount <= 0:
             raise ValidationError("Amount must be positive.")   
@@ -57,6 +59,7 @@ class Escrow(models.Model):
             else:
                 raise ValueError(f"Cannot mark as disputed from status: {self.status}")
 
+    
     def __str__(self):
         content = f"{self.content_type} {self.object_id}" if self.content_type and self.object_id else "Unlinked"
         return f"Escrow for {content} - {self.status}"

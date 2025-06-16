@@ -20,6 +20,7 @@ from rest_framework import serializers
 from .models import ForeignCurrencyRequest
 
 class ForeignCurrencyRequestSerializer(serializers.ModelSerializer):
+    proof_document_url = serializers.SerializerMethodField()
     class Meta:
         model = ForeignCurrencyRequest
         fields = [
@@ -36,10 +37,17 @@ class ForeignCurrencyRequestSerializer(serializers.ModelSerializer):
             'transaction_fee',
             'exchange_rate',
             'status',
+            'bank_name',
+            'proof_document',
+            'proof_document_url',
             'created_at'
         ]
-        read_only_fields = ['id', 'requester', 'transaction_fee', 'status', 'created_at']
-
+        read_only_fields = ['id', 'requester', 'transaction_fee', 'status','proof_document_url', 'created_at']
+    
+    def get_proof_document_url(self, obj):
+        if obj.proof_document:
+            return obj.proof_document.url
+        return None
 class ExchangeRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExchangeRate
