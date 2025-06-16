@@ -106,7 +106,12 @@ class ForeignCurrencyRequest(BaseTransaction):
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="foreign_currency_requests")
     amount_requested = models.DecimalField(max_digits=12, decimal_places=2)
     currency_type = models.CharField(max_length=10)
-    payment_method = models.CharField(max_length=50, null=True, blank=True)
+    PAYMENT_CHOICES = [
+        ('telebirr', 'TeleBirr'),
+        ('CBE', 'CBE'),
+        ('chapa', 'Chapa'),
+    ]
+    payment_method = models.CharField(max_length=50,choices=PAYMENT_CHOICES, null=True, blank=True)
     purpose = models.CharField(max_length=255)
     urgency_level = models.CharField(max_length=50, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium')
     bank_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)

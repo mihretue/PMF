@@ -14,6 +14,9 @@ from .signals import create_wallet_for_new_user
 from .services import get_live_exchange_rate
 from datetime import datetime
 from django.db.models import F
+from django.utils.timezone import now, timedelta
+from itertools import chain
+
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -73,11 +76,11 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
                 content_type=ContentType.objects.get_for_model(transfer),
                 object_id=transfer.id,
                 amount=transfer.amount,
-                status='in_escrow'  # Set initial status to 'in_escrow'
+                status='pending'  # Set initial status to 'in_escrow'
             )
             
             # Explicitly save transfer after all updates
-            transfer.status = 'in_escrow'  # Set status to 'in_escrow'
+            transfer.status = 'pending'  # Set status to 'in_escrow'
             transfer.save()
 
     
@@ -148,7 +151,7 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
                 amount=foreign_request.amount_requested
             )
 
-            foreign_request.status = 'approved'
+            foreign_request.status = 'pending'
             foreign_request.save()
 
     def get_queryset(self):
@@ -345,3 +348,27 @@ class DeleteCurrencyAlertView(viewsets.ViewSet):
         
         alert.delete()
         return Response({"message": "Alert deleted."}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+class RecentTransactionViewSet(viewsets.ViewSet): 
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['GET'], url_path='recent-transactions')
+    def recent_transactions(self, request):
+        transaction_type = request.query_params.get('type')
+        one_week_ago = now() - timedelta(days=7)
+
+        if not transaction_type:
+            return Response({"error": "type param is required (money_transfer | foreign_request)"}, status=400)
+
+        if transaction_type == 'money_transfer':
+            transactions = MoneyTransfer.objects.filter(created_at__gte=one_week_ago).order_by('-created_at')
+            serializer = MoneyTransferSerializer(transactions, many=True)
+        elif transaction_type == 'foreign_request':
+            transactions = ForeignCurrencyRequest.objects.filter(created_at__gte=one_week_ago).order_by('-created_at')
+            serializer = ForeignCurrencyRequestSerializer(transactions, many=True)
+        else:
+            return Response({"error": "Invalid type. Use 'money_transfer' or 'foreign_request'"}, status=400)
+
+        return Response(serializer.data)
