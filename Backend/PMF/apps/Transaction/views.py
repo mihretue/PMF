@@ -233,7 +233,8 @@ class MyTransactionViewSet(viewsets.ViewSet):
 class ExchangeRateView(viewsets.ViewSet):
     queryset = ExchangeRate.objects.all()
     serializer_class = ExchangeRateSerializer
-
+    permission_classes=[permissions.AllowAny]
+    
     @action(detail=False, methods=['get'], url_path='live')
     def live_exchange_rate(self, request):
         currency_from = request.query_params.get("from")
@@ -352,7 +353,7 @@ class DeleteCurrencyAlertView(viewsets.ViewSet):
 
 
 class RecentTransactionViewSet(viewsets.ViewSet): 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=['GET'], url_path='recent-transactions')
     def recent_transactions(self, request):
