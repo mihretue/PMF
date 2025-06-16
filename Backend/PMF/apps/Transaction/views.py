@@ -34,7 +34,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             transfer = serializer.save(sender=request.user)
             
             # 2. Calculate and set transaction fee
-            transfer.transaction_fee = transfer.calculate_transaction_fee()
+            transfer.transaction_fee = transfer.total_fee()
             
             # 4. Validate sender balance
             # try:
@@ -118,7 +118,7 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
         request = self.request
         with transaction.atomic():
             foreign_request = serializer.save(requester=request.user)
-            foreign_request.transaction_fee = foreign_request.calculate_transaction_fee()
+            foreign_request.transaction_fee = foreign_request.total_fee()
             foreign_request.save()
 
             # Fetch PMF EURO wallet (assuming it's your source pool for foreign currency)
