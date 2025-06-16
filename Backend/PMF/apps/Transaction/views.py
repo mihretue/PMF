@@ -276,7 +276,8 @@ class ExchangeRateView(viewsets.ViewSet):
     def live_exchange_rate(self, request):
         currency_from = request.query_params.get("from")
         currency_to = request.query_params.get("to")
-
+        amount = request.query_params.get("amount")
+        
         if not currency_from or not currency_to:
             return Response(
                 {"error": "Both 'from' and 'to' query parameters are required."},
@@ -290,11 +291,32 @@ class ExchangeRateView(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        return Response({
+        response_data = {
             "from": currency_from.upper(),
             "to": currency_to.upper(),
             "rate": rate
-        }, status=status.HTTP_200_OK)
+        }
+
+        if amount:
+            try:
+                amount = Decimal(amount)
+                bank_fee = (amount * Decimal('0.005')).quantize(Decimal('0.01'))
+                pmf_fee = (amount * Decimal('0.015')).quantize(Decimal('0.01'))
+                total_fee = bank_fee + pmf_fee
+
+                response_data.update({
+                    "amount": str(amount),
+                    "bank_fee": str(bank_fee),
+                    "pmf_fee": str(pmf_fee),
+                    "total_fee": str(total_fee)
+                })
+            except (ValueError, InvalidOperation):
+                return Response(
+                    {"error": "Invalid amount value."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        return Response(response_data, status=status.HTTP_200_OK)
         
         
 class DailyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
