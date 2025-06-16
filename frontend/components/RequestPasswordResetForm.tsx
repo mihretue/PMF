@@ -54,7 +54,7 @@ export default function RequestPasswordResetForm() {
       </div>
 
       {/* Right side form */}
-      <div className="w-full md:w-1/2 bg-blue-50 p-8 rounded-lg">
+      <div className="w-full md:w-1/2 bg-blue-50 p-8 rounded-lg shadow-lg">
         <div className="flex justify-center mb-4">
         <div className="max-w-xs">
           <Image
@@ -101,7 +101,7 @@ export default function RequestPasswordResetForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-[16px] bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
+              className="w-full mt-[16px] bg-[#3682AF] text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
             >
               {isLoading ? "Sending..." : "Send Link"}
             </button>

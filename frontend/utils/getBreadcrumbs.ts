@@ -1,42 +1,24 @@
-// utils/getBreadcrumbs.ts or inside your layout file
-
-// import Link from "next/link";
+// utils/useBreadcrumbs.ts
 import { usePathname } from "next/navigation";
+import { validRoutes } from "./validRoutes ";
 
 export function useBreadcrumbs() {
   const pathname = usePathname();
-
-  const breadcrumbMap: Record<string, { title: string; url: string }> = {
-    dashboard: { title: "Dashboard", url: "/admin/dashboard" },
-    profile: { title: "Profile", url: "/profile" },
-    settings: { title: "Settings", url: "/settings" },
-    // ✅ Add more routes as needed
-  };
-
   const segments = pathname.split("/").filter(Boolean);
-  let currentPath = "";
 
   const breadcrumbs = [
-    {
-      title: "Home",
-      url: "/",
-    },
+    { title: "Home", url: "/", isLink: true },
   ];
+
+  let currentPath = "";
 
   for (const segment of segments) {
     currentPath += `/${segment}`;
-    if (breadcrumbMap[segment]) {
-      breadcrumbs.push({
-        title: breadcrumbMap[segment].title,
-        url: breadcrumbMap[segment].url,
-      });
-    } else {
-      // fallback to capitalized segment if not mapped
-      breadcrumbs.push({
-        title: segment.charAt(0).toUpperCase() + segment.slice(1),
-        url: currentPath,
-      });
-    }
+    breadcrumbs.push({
+      title: decodeURIComponent(segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ")),
+      url: currentPath,
+      isLink: validRoutes.includes(currentPath),
+    });
   }
 
   return breadcrumbs;

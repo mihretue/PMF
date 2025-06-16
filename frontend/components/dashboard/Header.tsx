@@ -1,30 +1,33 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Search, Bell, ChevronDown, Menu } from "lucide-react"
-import Image from "next/image"
+import { useState, useRef, useEffect, useContext } from "react";
+import { Search, Bell, ChevronDown, Menu, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { AUTH } from "@/app/api/endpoints";
+import NotificationContext from "@/context/NotificationContext";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
-  onToggleSidebar: () => void
+  onToggleSidebar: () => void;
   user: {
-    name: string
-    email: string
-    avatar?: string
-  }
+    name: string;
+    email: string;
+    avatar?: string;
+  };
 }
 
 interface Notification {
-  id: string
-  user: string
-  message: string
-  time: string
-  read: boolean
+  id: string;
+  user: string;
+  message: string;
+  time: string;
+  read: boolean;
 }
 
 export default function Header({ onToggleSidebar, user }: HeaderProps) {
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: "1",
@@ -82,35 +85,96 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
       time: "2d",
       read: true,
     },
-  ])
+  ]);
 
-  const userMenuRef = useRef<HTMLDivElement>(null)
-  const notificationsRef = useRef<HTMLDivElement>(null)
-  const languageMenuRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Count unread notifications
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const router = useRouter();
+  const notificationCtx = useContext(NotificationContext);
+
+  const handleLogout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // console.log("Data to be sent:", loginData);
+
+    try {
+      const response = await fetch(AUTH.LOGOUT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "JWT", // 👈 this is the key fix
+        },
+        // body: JSON.stringify(loginData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // const token = data.token || data.access; // Depending on backend format
+
+        // // Store token in localStorage or cookie
+        // localStorage.setItem("auth_token", token);
+
+        notificationCtx.showNotification({
+          status: "success",
+          message: "Logged in successfully!",
+        });
+
+        // Optional: Save token, redirect, etc.
+        setTimeout(() => router.push("/"), 1500);
+      } else {
+        notificationCtx.showNotification({
+          status: "error",
+          message:
+            data.detail || "Login failed. Please check your credentials.",
+        });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      notificationCtx.showNotification({
+        status: "error",
+        message: "Network error. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false)
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setShowNotifications(false)
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
       }
-      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
-        setShowLanguageMenu(false)
+      if (
+        languageMenuRef.current &&
+        !languageMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageMenu(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-    setNotifications(notifications)
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+    setNotifications(notifications);
+  }, []);
 
   return (
     <header className="bg-white border-b border-gray-200 py-3 px-4 md:py-4 md:px-6">
@@ -127,7 +191,10 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
 
           {/* Search bar - hidden on smallest screens */}
           <div className="hidden sm:block relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={18}
+            />
             <input
               type="text"
               placeholder="Search..."
@@ -171,7 +238,10 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
 
           {/* Notifications */}
           <div ref={notificationsRef} className="relative">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-1">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-1"
+            >
               <Bell size={20} />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
@@ -215,16 +285,26 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
                             </svg>
                           </div>
                           <span
-                            className={`absolute top-0 left-0 w-3 h-3 ${notification.read ? "bg-green-500" : "bg-purple-500"} rounded-full`}
+                            className={`absolute top-0 left-0 w-3 h-3 ${
+                              notification.read
+                                ? "bg-green-500"
+                                : "bg-purple-500"
+                            } rounded-full`}
                           ></span>
                         </div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{notification.user}</p>
-                          <p className="text-xs text-gray-500">{notification.time}</p>
+                          <p className="text-sm font-medium">
+                            {notification.user}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {notification.time}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {notification.message}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -235,7 +315,10 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
 
           {/* User profile */}
           <div ref={userMenuRef} className="relative">
-            <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center"
+            >
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                 {user.avatar ? (
                   <Image
@@ -277,10 +360,45 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
                   <h3 className="text-base font-medium">{user.name}</h3>
 
                   <div className="w-full mt-4 space-y-2 text-blue-600">
-                    <button className="w-full text-left text-sm hover:underline">Change Password</button>
-                    <button className="w-full text-left text-sm hover:underline">Settings</button>
-                    <button className="w-full mt-2 border border-blue-400 rounded-md py-2 text-center text-sm hover:bg-blue-100 transition-colors">
-                      Logout
+                    <button className="w-full text-left text-sm hover:underline">
+                      Change Password
+                    </button>
+                    <button className="w-full text-left text-sm hover:underline">
+                      Settings
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className=" bg-[#3682AF] w-full text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 flex items-center justify-center mt-4"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Logging out...
+                        </span>
+                      ) : (
+                        <>
+                          Logout <ArrowRight className="ml-2" size={18} />
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -293,7 +411,10 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
       {/* Mobile search - only visible on smallest screens */}
       <div className="mt-3 sm:hidden">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search..."
@@ -302,6 +423,5 @@ export default function Header({ onToggleSidebar, user }: HeaderProps) {
         </div>
       </div>
     </header>
-  )
+  );
 }
-

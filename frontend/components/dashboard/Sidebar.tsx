@@ -1,12 +1,20 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { LayoutDashboard, ArrowLeftRight, MessageSquare, User, Settings, HelpCircle, LogOut, X } from "lucide-react"
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  MessageSquare,
+  User,
+  Settings,
+  HelpCircle,
+  LogOut,
+  X,
+  ChevronRight,
+} from "lucide-react"
 
 interface SidebarProps {
   isOpen: boolean
@@ -19,6 +27,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   // Handle responsive behavior
   const [isMounted, setIsMounted] = useState(false)
+
+  // Track expanded menu items
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
+
+  // Toggle expanded state for menu items with sub-items
+  const toggleExpand = (href: string) => {
+    setExpandedItems((prev) => (prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]))
+  }
 
   useEffect(() => {
     setIsMounted(true)
@@ -62,16 +78,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [isOpen])
 
-  // Define navigation items
+  // Define navigation items with sub-items
   const navItems = [
     { icon: <LayoutDashboard size={20} />, text: "Dashboard", href: "/admin/dashboard" },
-    { icon: <ArrowLeftRight size={20} />, text: "Transactions", href: "/admin/transactions" },
-    { icon: <ArrowLeftRight size={20} />, text: "Exchange rate", href: "/exchange-rate" },
+    {
+      icon: <ArrowLeftRight size={20} />,
+      text: "Transactions",
+      href: "/admin/transactions",
+      subItems: [
+        { text: "Need foreign currency", href: "/admin/transactions/foreign-currency" },
+        { text: "Send money", href: "/admin/transactions/send-money" },
+      ],
+    },
+    { icon: <ArrowLeftRight size={20} />, text: "Exchange rate", href: "/admin/exchange-rate" },
     { icon: <MessageSquare size={20} />, text: "Messages", href: "/messages" },
-    { icon: <User size={20} />, text: "Profile", href: "/profile" },
+    // { icon: <User size={20} />, text: "Profile", href: "/profile" },
+    {
+      icon: <User size={20} />,
+      text: "Profile",
+      href: "/admin/profile",
+      subItems: [
+        { text: "KYC", href: "/admin/profile/kyc" },
+        // { text: "Send money", href: "/admin/transactions/send-money" },
+      ],
+    },
     { icon: <Settings size={20} />, text: "Settings", href: "/settings" },
-    { icon: <HelpCircle size={20} />, text: "Help Center", href: "/help" },
-    { icon: <LogOut size={20} />, text: "Logout", href: "/logout" },
+    { icon: <HelpCircle size={20} />, text: "Help Center", href: "/admin/help" },
+    { icon: <LogOut size={20} />, text: "Logout", href: "/" },
   ]
 
   return (
@@ -90,7 +123,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Logo and close button */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center justify-center gap-1">
-              <Image src="/logo.png" alt="Logo" width={50} height={50} /><span className="text-md font-bold">Pay My Fee</span>
+              <Image src="/logo.png" alt="Logo" width={50} height={50} />
+              <span className="text-md font-bold">Pay My Fee</span>
             </div>
 
             <button onClick={onClose} className="lg:hidden p-1 rounded-full hover:bg-gray-100">
@@ -100,40 +134,69 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="space-y-1 flex-1">
-            {navItems.map((item) => (
-              <SidebarItem
-                key={item.href}
-                icon={item.icon}
-                text={item.text}
-                href={item.href}
-                active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-              />
-            ))}
+            {navItems.map((item) => {
+              const hasSubItems = item.subItems && item.subItems.length > 0
+              const isExpanded = expandedItems.includes(item.href)
+              const isParentActive =
+                pathname === item.href ||
+                pathname.startsWith(`${item.href}/`) ||
+                (hasSubItems &&
+                  item.subItems?.some(
+                    (subItem) => pathname === subItem.href || pathname.startsWith(`${subItem.href}/`),
+                  ))
+
+              return (
+                <div key={item.href} className="space-y-1">
+                  <div
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                      isParentActive ? "bg-[#3682AF] text-white" : "text-gray-600 hover:bg-gray-100"
+                    } ${hasSubItems ? "cursor-pointer" : ""}`}
+                    onClick={hasSubItems ? () => toggleExpand(item.href) : undefined}
+                  >
+                    {hasSubItems ? (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center">
+                          <span className="mr-3">{item.icon}</span>
+                          <span>{item.text}</span>
+                        </div>
+                        <ChevronRight
+                          size={16}
+                          className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                        />
+                      </div>
+                    ) : (
+                      <Link href={item.href} className="flex items-center w-full">
+                        <span className="mr-3">{item.icon}</span>
+                        <span>{item.text}</span>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Sub-items */}
+                  {hasSubItems && isExpanded && (
+                    <div className="ml-7 space-y-1">
+                      {item.subItems?.map((subItem) => (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                            pathname === subItem.href || pathname.startsWith(`${subItem.href}/`)
+                              ? "bg-[#3682AF] text-white"
+                              : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          <span>{subItem.text}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </nav>
         </div>
       </div>
     </>
-  )
-}
-
-interface SidebarItemProps {
-  icon: React.ReactNode
-  text: string
-  href: string
-  active: boolean
-}
-
-function SidebarItem({ icon, text, href, active }: SidebarItemProps) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-        active ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
-      }`}
-    >
-      <span className="mr-3">{icon}</span>
-      <span>{text}</span>
-    </Link>
   )
 }
 

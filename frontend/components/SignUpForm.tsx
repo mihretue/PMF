@@ -2,26 +2,42 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { AUTH } from "@/app/api/endpoints";
+import NotificationContext from "@/context/NotificationContext";
+// import {SignUp} from "@/app/services/services";
+interface UserRegistrationForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  address: string;
+}
 
 export default function SignUpForm() {
-  const [formData, setFormData] = useState({
+  const router = useRouter();
+  const [formData, setFormData] = useState<UserRegistrationForm>({
     firstName: "",
     lastName: "",
     email: "",
     phoneNumber: "",
     password: "",
-    confirmPassword: "",
+    address: "",
   });
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const notificationCtx = useContext(NotificationContext);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,59 +45,262 @@ export default function SignUpForm() {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.firstName.trim())
+      newErrors.firstName = "First name is required.";
+    if (!formData.lastName.trim())
+      newErrors.lastName = "Last name is required.";
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+
+    if (!formData.phoneNumber) {
+      newErrors.phoneNumber = "Phone number is required.";
+    } else if (formData.phoneNumber.replace(/[^\d]/g, "").length < 8) {
+      newErrors.phoneNumber = "Please enter a valid phone number.";
+    }
+
+    if (!formData.address.trim()) newErrors.address = "Address is required.";
+
+    if (!formData.password) {
+      newErrors.password = "Password is required.";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
+    } else if (!/[A-Z]/.test(formData.password)) {
+      newErrors.password =
+        "Password must contain at least one uppercase letter.";
+    } else if (!/[0-9]/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one number.";
+    } else if (!/[^A-Za-z0-9]/.test(formData.password)) {
+      newErrors.password =
+        "Password must contain at least one special character.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
+
     setIsLoading(true);
 
+    // Transform data to match API expectations
+    const apiData = {
+      first_name: formData.firstName.trim(),
+      last_name: formData.lastName.trim(),
+      email: formData.email.trim(),
+      phone_number: formData.phoneNumber,
+      password: formData.password,
+      address: formData.address.trim(),
+    };
+
     try {
-      // Here you would integrate with your Django backend
-      // Example:
-      // const response = await fetch('your-django-api/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // })
+      const response = await fetch(AUTH.REGISTER, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiData),
+      });
 
-      console.log("Form submitted:", formData);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    
 
-      // Handle successful signup
-      // Redirect or show success message
+      if (response.ok) {
+        notificationCtx.showNotification({
+          status: "success",
+          message: "Registration successful! Please verify your email.",
+        });
+        setRegistrationSuccess(true);
+      } else {
+        // Handle field-specific errors from Django
+        const data = await response.json();
+        if (data.detail) {
+          notificationCtx.showNotification({
+            status: "error",
+            message: data.detail,
+          });
+        } else if (typeof data === "object") {
+          // Map field errors to your form errors
+          const fieldErrors = Object.entries(data).reduce(
+            (acc, [key, value]) => {
+              acc[key] = Array.isArray(value) ? value.join(" ") : String(value);
+              return acc;
+            },
+            {} as { [key: string]: string }
+          );
+          setErrors(fieldErrors);
+        }
+      }
     } catch (error) {
-      console.error("Signup error:", error);
-      // Handle error
+      notificationCtx.showNotification({
+        status: "error",
+        message: "Network error. Please try again later.",
+      });
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignUp = () => {
-    // Implement Google OAuth integration
-    console.log("Sign up with Google");
+  const handleGenerateOtp = async () => {
+    setOtpLoading(true);
+    try {
+      const response = await fetch(AUTH.GENERATE_OTP, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: "Your OTP Code",
+          email: formData.email,
+        }),
+      });
+
+      if (response.ok) {
+        notificationCtx.showNotification({
+          status: "success",
+          message: "OTP sent to your email!",
+        });
+        // Redirect to OTP verification page
+        router.push(
+          `/verify-otp?email=${encodeURIComponent(formData.email.trim())}`
+        );
+      } else {
+        const data = await response.json();
+        notificationCtx.showNotification({
+          status: "error",
+          message: data.detail || "Failed to generate OTP. Please try again.",
+        });
+      }
+    } catch (error) {
+      notificationCtx.showNotification({
+        status: "error",
+        message: "Network error. Please try again later.",
+      });
+      console.error("OTP generation error:", error);
+    } finally {
+      setOtpLoading(false);
+    }
   };
+
+  const handleGoogleSignUp = () => {
+    notificationCtx.showNotification({
+      status: "info",
+      message: "Google sign-up is not implemented yet.",
+    });
+  };
+
+  if (registrationSuccess) {
+    return (
+      <div className="flex flex-col md:flex-row items-center w-full max-w-5xl">
+        <div className="w-full md:w-1/2 p-6 flex justify-center">
+          <div className="max-w-xs">
+            <Image
+              src="/signup.webp"
+              alt="Security illustration"
+              width={700}
+              height={500}
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg shadow-lg">
+          <h1 className="text-2xl font-semibold text-center mb-6">
+            Verify Your Email
+          </h1>
+          <div className="text-center mb-6">
+            <p className="mb-4">
+              A verification OTP will be sent to{" "}
+              <span className="font-semibold">{formData.email}</span>.
+            </p>
+            <p className="mb-6">
+              Click the button below to receive your OTP code.
+            </p>
+            <button
+              onClick={handleGenerateOtp}
+              disabled={otpLoading}
+              className="w-full bg-[#3682AF] text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {otpLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Sending OTP...
+                </span>
+              ) : (
+                "Send OTP to My Email"
+              )}
+            </button>
+          </div>
+          <div className="text-center text-sm">
+            <p>
+              Didn&apos;t receive the OTP?{" "}
+              <button
+                onClick={handleGenerateOtp}
+                className="text-blue-600 hover:underline"
+                disabled={otpLoading}
+              >
+                Resend OTP
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row items-center w-full max-w-5xl">
-      {/* Left side illustration */}
       <div className="w-full md:w-1/2 p-6 flex justify-center">
         <div className="max-w-xs">
           <Image
             src="/signup.webp"
             alt="Security illustration"
-            width={300}
-            height={300}
+            width={700}
+            height={500}
             className="object-contain"
+            priority
           />
         </div>
       </div>
 
-      {/* Right side form */}
-      <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg">
+      <div className="w-full md:w-1/2 bg-gray-100/80 p-8 rounded-lg shadow-lg">
         <h1 className="text-2xl font-semibold text-center mb-6">Sign Up</h1>
 
+      
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
@@ -97,9 +316,16 @@ export default function SignUpForm() {
               placeholder="Enter first name"
               value={formData.firstName}
               onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={isLoading}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
+                errors.firstName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:ring-blue-500"
+              }`}
             />
+            {errors.firstName && (
+              <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+            )}
           </div>
 
           <div>
@@ -116,9 +342,16 @@ export default function SignUpForm() {
               placeholder="Enter last name"
               value={formData.lastName}
               onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={isLoading}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
+                errors.lastName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:ring-blue-500"
+              }`}
             />
+            {errors.lastName && (
+              <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+            )}
           </div>
 
           <div>
@@ -129,12 +362,19 @@ export default function SignUpForm() {
               id="email"
               name="email"
               type="email"
-              placeholder="Enter email name"
+              placeholder="Enter email address"
               value={formData.email}
               onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={isLoading}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
+                errors.email
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:ring-blue-500"
+              }`}
             />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -144,24 +384,35 @@ export default function SignUpForm() {
             >
               Phone number
             </label>
-
             <PhoneInput
               country={"gb"} // Default country
               value={formData.phoneNumber}
-              onChange={(phone: string) =>
+              onChange={(phone: string) => {
+                const formattedPhone = `+${phone}`;
                 setFormData((prev) => ({
                   ...prev,
-                  phoneNumber: phone,
-                }))
-              }
-              onlyCountries={["gb", "et", "us", "ca", ""]} // Add more here if needed
+                  phoneNumber: formattedPhone,
+                }));
+
+                if (errors.phoneNumber) {
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.phoneNumber;
+                    return newErrors;
+                  });
+                }
+              }}
+              onlyCountries={["gb", "et", "us", "ca"]}
               enableSearch={true}
+              disabled={isLoading}
               inputStyle={{
                 width: "100%",
                 height: "2.5rem",
                 fontSize: "0.875rem",
                 borderRadius: "0.375rem",
-                border: "1px solid #93c5fd",
+                border: errors.phoneNumber
+                  ? "1px solid #ef4444"
+                  : "1px solid #93c5fd",
                 paddingLeft: "48px",
                 paddingRight: "0.75rem",
                 backgroundColor: "rgba(243, 244, 246, 0.8)",
@@ -169,9 +420,10 @@ export default function SignUpForm() {
               }}
               containerStyle={{ width: "100%" }}
               buttonStyle={{
-                border: "1px solid #93c5fd",
+                border: errors.phoneNumber
+                  ? "1px solid #ef4444"
+                  : "1px solid #93c5fd",
                 backgroundColor: "#fff",
-                // paddingLeft: "0.2rem",
                 paddingRight: "0.5rem",
               }}
               dropdownStyle={{
@@ -179,11 +431,35 @@ export default function SignUpForm() {
                 border: "1px solid #d1d5db",
                 boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",
               }}
-              inputProps={{
-                name: "phoneNumber",
-                required: true,
-              }}
+              inputProps={{ name: "phoneNumber", required: true }}
             />
+
+            {errors.phoneNumber && (
+              <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium mb-1">
+              Address
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              placeholder="Enter your address"
+              value={formData.address}
+              onChange={handleChange}
+              disabled={isLoading}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
+                errors.address
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:ring-blue-500"
+              }`}
+            />
+            {errors.address && (
+              <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+            )}
           </div>
 
           <div>
@@ -198,56 +474,62 @@ export default function SignUpForm() {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={isLoading}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 ${
+                  errors.password
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-blue-300 focus:ring-blue-500"
+                }`}
               />
               <button
                 type="button"
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium mb-1"
-            >
-              Confirm Password
-            </label>
-            <div className="relative">
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70"
+            className="w-full  bg-[#3682AF] text-white py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Signing up..." : "Sign up"}
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Signing up...
+              </span>
+            ) : (
+              "Sign up"
+            )}
           </button>
         </form>
 
@@ -272,7 +554,8 @@ export default function SignUpForm() {
         <button
           type="button"
           onClick={handleGoogleSignUp}
-          className="mt-4 w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={isLoading}
+          className="mt-4 w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
