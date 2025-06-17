@@ -1,2 +1,1 @@
-web: daphne -b 0.0.0.0 -p $PORT PMF.asgi:application
 web: gunicorn --bind 0.0.0.0:${PORT} PMF.wsgi:application
