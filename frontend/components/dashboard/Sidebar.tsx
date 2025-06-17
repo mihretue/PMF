@@ -90,7 +90,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { text: "Send money", href: "/admin/transactions/send-money" },
       ],
     },
-    { icon: <ArrowLeftRight size={20} />, text: "Exchange rate", href: "/exchange-rate" },
+    { icon: <ArrowLeftRight size={20} />, text: "Exchange rate", href: "/admin/exchange-rate" },
     { icon: <MessageSquare size={20} />, text: "Messages", href: "/messages" },
     // { icon: <User size={20} />, text: "Profile", href: "/profile" },
     {
@@ -103,8 +103,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       ],
     },
     { icon: <Settings size={20} />, text: "Settings", href: "/settings" },
-    { icon: <HelpCircle size={20} />, text: "Help Center", href: "/help" },
-    { icon: <LogOut size={20} />, text: "Logout", href: "/logout" },
+    { icon: <HelpCircle size={20} />, text: "Help Center", href: "/admin/help" },
+    { icon: <LogOut size={20} />, text: "Logout", href: "/" },
   ]
 
   return (
