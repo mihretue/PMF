@@ -16,7 +16,7 @@ from datetime import datetime
 from django.db.models import F
 from django.utils.timezone import now, timedelta
 from itertools import chain
-
+from django.db.models import Count
 
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
@@ -432,3 +432,67 @@ class RecentTransactionViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid type. Use 'money_transfer' or 'foreign_request'"}, status=400)
 
         return Response(serializer.data)
+    
+    
+class StatusCountViewSet(viewsets.ViewSet):
+    """
+    API endpoint that returns counts of transactions grouped by status
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['GET'], url_path='money-transfers')
+    def money_transfer_status_counts(self, request):
+        """
+        Get counts of MoneyTransfer objects grouped by status
+        """
+        counts = MoneyTransfer.objects.filter(sender=request.user).values('status').annotate(
+            count=Count('status')
+        ).order_by('status')
+        
+        # Convert to a more friendly format
+        result = {item['status']: item['count'] for item in counts}
+        
+        # Include all possible statuses with 0 count if not present
+        all_statuses = dict(MoneyTransfer.STATUS_CHOICES).keys()
+        final_result = {status: result.get(status, 0) for status in all_statuses}
+        
+        return Response(final_result)
+
+    @action(detail=False, methods=['GET'], url_path='foreign-requests')
+    def foreign_request_status_counts(self, request):
+        """
+        Get counts of ForeignCurrencyRequest objects grouped by status
+        """
+        counts = ForeignCurrencyRequest.objects.filter(requester=request.user).values('status').annotate(
+            count=Count('status')
+        ).order_by('status')
+        
+        # Convert to a more friendly format
+        result = {item['status']: item['count'] for item in counts}
+        
+        # Include all possible statuses with 0 count if not present
+        all_statuses = dict(ForeignCurrencyRequest.STATUS_CHOICES).keys()
+        final_result = {status: result.get(status, 0) for status in all_statuses}
+        
+        return Response(final_result)
+
+    @action(detail=False, methods=['GET'])
+    def all_status_counts(self, request):
+        """
+        Get combined counts for both MoneyTransfer and ForeignCurrencyRequest
+        """
+        money_counts = MoneyTransfer.objects.filter(sender=request.user).values('status').annotate(
+            count=Count('status')
+        )
+        foreign_counts = ForeignCurrencyRequest.objects.filter(requester=request.user).values('status').annotate(
+            count=Count('status')
+        )
+        
+        # Combine results
+        combined = {}
+        for item in money_counts:
+            combined[f"money_transfer_{item['status']}"] = item['count']
+        for item in foreign_counts:
+            combined[f"foreign_request_{item['status']}"] = item['count']
+            
+        return Response(combined)

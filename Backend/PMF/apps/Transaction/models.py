@@ -33,6 +33,7 @@ class BaseTransaction(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     escrow = models.OneToOneField('Escrow.Escrow', null=True, blank=True, on_delete=models.SET_NULL)
     proof_document = CloudinaryField('proof_document', blank=True, null=True)
+    
     class Meta:
         abstract = True
 
