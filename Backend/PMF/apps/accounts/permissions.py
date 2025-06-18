@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework.exceptions import PermissionDenied
 
 class IsAdmin(permissions.BasePermission):
     """Allows access only to Admin users."""
@@ -28,3 +29,18 @@ class IsAdminOrReceiver(permissions.BasePermission):
 class IsSenderOrReceiver(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and (request.user.is_sender() or request.user.is_receiver())
+    
+    
+class IsVerifiedUser(permissions.BasePermission):
+    """
+    Allows access only to verified users.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False  # DRF will handle unauthenticated separately
+
+        if not request.user.is_verified:
+            raise PermissionDenied(detail="Your account is not verified. Please verify your account to proceed.")
+        
+        return True

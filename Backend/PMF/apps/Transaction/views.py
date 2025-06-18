@@ -4,7 +4,7 @@ from rest_framework.decorators import action, api_view, APIView
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet, DailyExchangeRate,CurrencyAlert
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer,TransactionLogSerializer, DailyExchangeRateSerializer,CurrencyAlertSerializer
-from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
+from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver,IsVerifiedUser
 from .services import get_live_exchange_rate
 from decimal import Decimal
 from django.db import transaction
@@ -27,7 +27,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
     queryset = MoneyTransfer.objects.all()
     serializer_class = MoneyTransferSerializer
-    permission_classes = [IsSender]
+    permission_classes = [IsSender, IsVerifiedUser]
 
     def perform_create(self, serializer):
         request = self.request
@@ -125,14 +125,18 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 
         escrow = transaction.initiate_escrow()
         escrow.status = 'funds_held'
-        escrow.save()  # triggers update_from_escrow()
+        escrow.save()
+
+        # 👈 Explicitly sync transaction status now (avoiding possible signal timing issues)
+        transaction.refresh_from_db()
+        transaction.update_from_escrow()
 
         return Response({'message': 'Proof uploaded and transaction moved to escrow.'}, status=status.HTTP_200_OK)
 
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
     queryset = ForeignCurrencyRequest.objects.all()
     serializer_class = ForeignCurrencyRequestSerializer
-    permission_classes = [IsReceiver]
+    permission_classes = [IsReceiver, IsVerifiedUser]
 
     def perform_create(self, serializer):
         request = self.request
@@ -190,10 +194,14 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
 
         escrow = transaction.initiate_escrow()
         escrow.status = 'funds_held'
-        escrow.save()  # triggers update_from_escrow()
+        escrow.save()
+
+        # 👈 Explicitly sync transaction status now (avoiding possible signal timing issues)
+        transaction.refresh_from_db()
+        transaction.update_from_escrow()
 
         return Response({'message': 'Proof uploaded and transaction moved to escrow.'}, status=status.HTTP_200_OK)
-    
+
     
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExchangeRate.objects.all()
