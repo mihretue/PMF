@@ -226,6 +226,13 @@ class DailyExchangeRate(models.Model):
 
 class CurrencyAlert(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    target_rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Central rate used to calculate min/max thresholds"
+    )
     base_currency = models.CharField(max_length=10)
     target_currency = models.CharField(max_length=10)
     min_rate = models.DecimalField(max_digits=12, decimal_places=4)
@@ -237,3 +244,9 @@ class CurrencyAlert(models.Model):
 
     def __str__(self):
         return f"{self.user.email} Alert for {self.base_currency}/{self.target_currency} between {self.min_rate}-{self.max_rate}"
+    
+    @property
+    def threshold_percent(self):
+        if self.target_rate and self.min_rate:
+            return ((self.target_rate - self.min_rate) / self.target_rate) * 100
+        return None

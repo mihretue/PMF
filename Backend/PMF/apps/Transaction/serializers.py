@@ -74,35 +74,42 @@ class DailyExchangeRateSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'base_code', 'rates', 'created_at']
         
 class CurrencyAlertSerializer(serializers.ModelSerializer):
-    target_rate = serializers.DecimalField(
-        max_digits=12, 
-        decimal_places=4,
-        write_only=True,  # Only for input, won't be shown in responses
-        required=False
-    )
-    
     class Meta:
         model = CurrencyAlert
         fields = [
-            'id', 'user', 'base_currency', 'target_currency', 
-            'min_rate', 'max_rate', 'is_active', 'notify_interval',
-            'target_rate'  # Add this new field
+            'id', 'user', 'base_currency', 'target_currency',
+            'target_rate', 'min_rate', 'max_rate',
+            'is_active', 'notify_interval', 'created_at'
         ]
-        read_only_fields = ['user']
+        read_only_fields = ['user', 'created_at']
+        extra_kwargs = {
+            'min_rate': {'required': False},
+            'max_rate': {'required': False}
+        }
 
     def validate(self, data):
-        # If target_rate is provided, use it to set min/max
-        target_rate = data.pop('target_rate', None)
+        target_rate = data.get('target_rate')
+        
+        # If target_rate is provided, calculate min/max
         if target_rate is not None:
-            # Set your desired threshold (e.g., ±1%)
             threshold = Decimal('0.01')  # 1% threshold
-            data['min_rate'] = target_rate * (1 - threshold)
-            data['max_rate'] = target_rate * (1 + threshold)
+            data['min_rate'] = Decimal(target_rate) * (1 - threshold)
+            data['max_rate'] = Decimal(target_rate) * (1 + threshold)
         
-        # If target_rate not provided, ensure min_rate and max_rate are present
+        # If target_rate not provided, require both min and max
         elif 'min_rate' not in data or 'max_rate' not in data:
-            raise serializers.ValidationError(
-                "Either provide target_rate or both min_rate and max_rate"
-            )
+            raise serializers.ValidationError({
+                'non_field_errors': [
+                    "Either provide target_rate or both min_rate and max_rate"
+                ]
+            })
         
+        # Ensure min_rate < max_rate
+        if Decimal(data.get('min_rate', 0)) >= Decimal(data.get('max_rate', 0)):
+            raise serializers.ValidationError({
+                'non_field_errors': [
+                    "min_rate must be less than max_rate"
+                ]
+            })
+            
         return data
