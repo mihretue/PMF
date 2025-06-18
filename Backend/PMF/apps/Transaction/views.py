@@ -375,41 +375,80 @@ class DailyExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
 class CreateCurrencyAlertView(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        serializer = CurrencyAlertSerializer(data=request.data)
+    def create(self, request):
+        serializer = CurrencyAlertSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        
         if serializer.is_valid():
             serializer.save(user=request.user)
-            return Response({"message": "Alert created successfully."}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "message": "Alert created successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+            
+        return Response({
+            "error": "Validation failed",
+            "details": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
+
 class UpdateCurrencyAlertView(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
-    def patch(self, request, pk):
+    def partial_update(self, request, pk=None):
         try:
             alert = CurrencyAlert.objects.get(pk=pk, user=request.user)
         except CurrencyAlert.DoesNotExist:
-            return Response({"error": "Alert not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Alert not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        serializer = CurrencyAlertSerializer(alert, data=request.data, partial=True)
+        serializer = CurrencyAlertSerializer(
+            alert, 
+            data=request.data, 
+            partial=True,
+            context={'request': request}
+        )
+        
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Alert updated.", "data": serializer.data}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "message": "Alert updated.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        return Response({
+            "error": "Validation failed",
+            "details": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class DeleteCurrencyAlertView(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
-    def delete(self, request, pk):
+    def destroy(self, request, pk=None):
         try:
             alert = CurrencyAlert.objects.get(pk=pk, user=request.user)
         except CurrencyAlert.DoesNotExist:
-            return Response({"error": "Alert not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Alert not found or you don't have permission to delete it."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
         
         alert.delete()
-        return Response({"message": "Alert deleted."}, status=status.HTTP_204_NO_CONTENT)
-
-
+        return Response(
+            {
+                "status": "success",
+                "message": "Currency alert deleted successfully."
+            },
+            status=status.HTTP_200_OK
+        )
 
 class RecentTransactionViewSet(viewsets.ViewSet): 
     permission_classes = [permissions.IsAuthenticated]

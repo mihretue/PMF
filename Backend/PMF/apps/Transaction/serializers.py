@@ -74,10 +74,35 @@ class DailyExchangeRateSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'base_code', 'rates', 'created_at']
         
 class CurrencyAlertSerializer(serializers.ModelSerializer):
+    target_rate = serializers.DecimalField(
+        max_digits=12, 
+        decimal_places=4,
+        write_only=True,  # Only for input, won't be shown in responses
+        required=False
+    )
+    
     class Meta:
         model = CurrencyAlert
         fields = [
-            'id', 'base_currency', 'target_currency', 'min_rate', 'max_rate',
-            'notify_interval', 'is_active', 'created_at', 'notified_at'
+            'id', 'user', 'base_currency', 'target_currency', 
+            'min_rate', 'max_rate', 'is_active', 'notify_interval',
+            'target_rate'  # Add this new field
         ]
-        read_only_fields = ['created_at', 'notified_at']
+        read_only_fields = ['user']
+
+    def validate(self, data):
+        # If target_rate is provided, use it to set min/max
+        target_rate = data.pop('target_rate', None)
+        if target_rate is not None:
+            # Set your desired threshold (e.g., ±1%)
+            threshold = Decimal('0.01')  # 1% threshold
+            data['min_rate'] = target_rate * (1 - threshold)
+            data['max_rate'] = target_rate * (1 + threshold)
+        
+        # If target_rate not provided, ensure min_rate and max_rate are present
+        elif 'min_rate' not in data or 'max_rate' not in data:
+            raise serializers.ValidationError(
+                "Either provide target_rate or both min_rate and max_rate"
+            )
+        
+        return data

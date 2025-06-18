@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import MoneyTransferViewSet, ForeignCurrencyRequestViewSet, ExchangeRateViewSet, TransactionFeeViewSet, MyTransactionViewSet, ExchangeRateView, DailyExchangeRateViewSet, RecentTransactionViewSet,StatusCountViewSet
+from .views import MoneyTransferViewSet, ForeignCurrencyRequestViewSet, ExchangeRateViewSet, TransactionFeeViewSet, MyTransactionViewSet, ExchangeRateView, DailyExchangeRateViewSet, RecentTransactionViewSet,StatusCountViewSet,DeleteCurrencyAlertView, CreateCurrencyAlertView, UpdateCurrencyAlertView
 
 router = DefaultRouter()
 router.register(r'money-transfers', MoneyTransferViewSet)
@@ -12,6 +12,9 @@ router.register(r'get-exchange-rate',ExchangeRateView, basename='get-exchange-ra
 router.register(r'exchange-rate',DailyExchangeRateViewSet, basename='exchange-rate')
 router.register(r'need', RecentTransactionViewSet, basename="need")
 router.register(r'status-counts', StatusCountViewSet, basename='status-counts')
+router.register(r'currency-alerts', DeleteCurrencyAlertView, basename='currency-alerts')
+router.register(r'currency-alerts-create', CreateCurrencyAlertView, basename='currency-alerts-creat')
+router.register(r'currency-alerts-update', UpdateCurrencyAlertView, basename='currency-alerts-updat')
 
 urlpatterns = [
     path('', include(router.urls)),

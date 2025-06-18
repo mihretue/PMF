@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
@@ -16,8 +17,8 @@ class KYC(models.Model):
     last_name = models.CharField(max_length=255)
     date_of_birth = models.DateField()
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPES)
-    document_front = models.FileField(upload_to='kyc_documents/')
-    document_back = models.FileField(upload_to='kyc_documents/', null=True, blank=True)  # Optional
+    document_front = CloudinaryField('document_front', folder='kyc_documents/')
+    document_back = CloudinaryField('document_back', folder='kyc_documents/', null=True, blank=True)
     verification_status = models.CharField(
         max_length=20,
         choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')],
