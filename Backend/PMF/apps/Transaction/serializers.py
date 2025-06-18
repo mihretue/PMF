@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import MoneyTransfer, Wallet,ForeignCurrencyRequest, ExchangeRate, TransactionLog, DailyExchangeRate, CurrencyAlert
-from django.contrib import Decimal
+from decimal import Decimal
+
 class MoneyTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = MoneyTransfer
