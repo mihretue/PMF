@@ -40,7 +40,7 @@ class IsVerifiedUser(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False  # DRF will handle unauthenticated separately
 
-        if not request.user.is_verified:
-            raise PermissionDenied(detail="Your account is not verified. Please verify your account to proceed.")
+        if not request.user.is_kyc_verified:
+            raise PermissionDenied(detail="Your KYC is not verified. Please verify your account to proceed.")
         
         return True
