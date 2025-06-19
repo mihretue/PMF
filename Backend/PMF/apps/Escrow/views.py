@@ -11,7 +11,12 @@ class EscrowViewSet(viewsets.ModelViewSet):
     serializer_class = EscrowSerializer
     permission_classes= [IsAdmin]
     
-  
+    @action(detail=False, methods=['get'])
+    def all(self, request):
+        escrows = self.get_queryset()
+        data = EscrowSerializer(escrows, many=True).data
+        return Response(data)
+
     @action(detail=True, methods=['post'])
     def release(self, request, pk=None):
         escrow = self.get_object()
