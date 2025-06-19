@@ -49,6 +49,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+CELERY_TASK_ALWAYS_EAGER = True
 
 # Application definition
 
