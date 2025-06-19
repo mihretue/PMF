@@ -140,10 +140,18 @@ class ForeignCurrencyRequest(BaseTransaction):
         return f"Foreign Currency Request {self.id} by {self.requester}"
 
     def calculate_bank_fee(self):
-        return (self.amount_requested * Decimal('0.005')).quantize(Decimal('0.01'))
+        if self.exchange_rate is None or self.amount_requested is None:
+            return Decimal('0.00')
+        fee = (self.amount_requested * self.exchange_rate * Decimal('0.005')).quantize(Decimal('0.01'))
+        self.bank_fee = fee
+        return fee
 
     def calculate_pmf_fee(self):
-        return (self.amount_requested * Decimal('0.015')).quantize(Decimal('0.01'))
+        if self.exchange_rate is None or self.amount_requested is None:
+            return Decimal('0.00')
+        fee = (self.amount_requested * self.exchange_rate * Decimal('0.015')).quantize(Decimal('0.01'))
+        self.pmf_fee = fee
+        return fee
 
     def total_fee(self):
         return (self.bank_fee or Decimal('0.00')) + (self.pmf_fee or Decimal('0.00'))
