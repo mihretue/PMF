@@ -11,7 +11,7 @@ def create_escrow_for_transfer(transfer_id):
             content_type=ContentType.objects.get_for_model(transfer),
             object_id=transfer.id,
             amount=transfer.amount,
-            status='in_escrow'
+            status='funds_held'
         )
 
 def update_related_transactions(escrow_id):
