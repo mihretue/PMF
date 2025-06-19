@@ -1,10 +1,10 @@
-from celery import shared_task
+# from celery import shared_task   <-- remove this import
+
 from django.contrib.contenttypes.models import ContentType
 from apps.Transaction.models import MoneyTransfer
 from .models import Escrow
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 5})
-def create_escrow_for_transfer_task(self, transfer_id):
+def create_escrow_for_transfer(transfer_id):
     transfer = MoneyTransfer.objects.get(id=transfer_id)
     if transfer.status == 'pending':
         Escrow.objects.create(
@@ -14,8 +14,7 @@ def create_escrow_for_transfer_task(self, transfer_id):
             status='in_escrow'
         )
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 5})
-def update_related_transactions_task(self, escrow_id):
+def update_related_transactions(escrow_id):
     escrow = Escrow.objects.get(id=escrow_id)
     if escrow.content_object:
         escrow.content_object.update_from_escrow()
