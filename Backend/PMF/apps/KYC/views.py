@@ -7,6 +7,7 @@ from .models import KYC
 from .serializers import KYCSerializer
 from apps.accounts.permissions import IsAdmin, IsSenderOrReceiver
 
+
 class KYCCreateView(APIView):
     permission_classes = [IsSenderOrReceiver]
 
