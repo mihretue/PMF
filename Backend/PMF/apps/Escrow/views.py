@@ -14,7 +14,7 @@ class EscrowViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def all(self, request):
-        escrows = self.get_queryset()
+        escrows = self.get_queryset().order_by('-created_at')[:20]
         data = EscrowSerializer(escrows, many=True).data
         return Response(data)
 
