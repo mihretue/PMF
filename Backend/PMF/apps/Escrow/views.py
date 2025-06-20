@@ -5,6 +5,7 @@ from .models import Escrow
 from .serializers import EscrowSerializer
 from apps.accounts.permissions import IsAdmin
 from django.db import transaction
+from apps.Transaction.Services.escrow_transaction_service import EscrowTransactionService
 
 class EscrowViewSet(viewsets.ModelViewSet):
     queryset = Escrow.objects.all()
@@ -70,3 +71,14 @@ class EscrowViewSet(viewsets.ModelViewSet):
                 )
 
         return Response({'message': 'Escrow marked as disputed.'}, status=200)
+    
+    
+    @action(detail=True, methods=['get'])
+    def transactions(self, request, pk=None):
+        escrow = self.get_object()
+
+        result = EscrowTransactionService.get_full_escrow_detail(escrow)
+        if not result:
+            return Response({'error': 'Related transaction not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(result, status=status.HTTP_200_OK)
