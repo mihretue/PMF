@@ -1,24 +1,10 @@
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
-<<<<<<< HEAD
 from rest_framework.decorators import action, api_view, APIView
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet, DailyExchangeRate,CurrencyAlert
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer,TransactionLogSerializer, DailyExchangeRateSerializer,CurrencyAlertSerializer
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver,IsVerifiedUser
-=======
-from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
-from .models import (
-    MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet,
-    CurrencyAlert
-)
-from .serializers import (
-    MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer,
-    WalletSerializer, TransactionLogSerializer, CurrencyAlertSerializer
-)
-from apps.accounts.permissions import IsSender, IsAdmin, IsVerifiedUser, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
 from .services import get_live_exchange_rate
 from decimal import Decimal
 from django.db import transaction
@@ -26,7 +12,6 @@ from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
 from .signals import create_wallet_for_new_user
 from apps.Notifications.models import Notification  # 🟢 Import Notification
-<<<<<<< HEAD
 from .services import get_live_exchange_rate
 from datetime import datetime
 from django.db.models import F
@@ -42,9 +27,6 @@ def notify(user, message):
     except Exception:
         pass
 
-=======
-from django.utils.timezone import now
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -62,16 +44,12 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
         account_number = request.data.get('account_number', 'SENDER-PAYPAL-TEST')
         with transaction.atomic():
             transfer = serializer.save(sender=request.user)
-<<<<<<< HEAD
             
             # 2. Calculate and set transaction fee
             transfer.transaction_fee = transfer.total_fee()
             
             # 4. Validate sender balance
             # try:
-=======
-            transfer.transaction_fee = transfer.total_fee()  # Fixed: use total_fee()
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
             sender_wallet, created = Wallet.objects.get_or_create(
                 account_number="SENDER-PAYPAL-TEST",
                 defaults={"balance": 10000, "currency": "USD"}
@@ -97,17 +75,11 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
                 content_type=ContentType.objects.get_for_model(transfer),
                 object_id=transfer.id,
                 amount=transfer.amount,
-<<<<<<< HEAD
                 status='pending'  # Set initial status to 'in_escrow'
             )
             
             # Explicitly save transfer after all updates
             transfer.status = 'pending'  # Set status to 'in_escrow'
-=======
-                status='in_escrow'
-            )
-            transfer.status = 'in_escrow'
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
             transfer.save()
 
             # 🟢 Notification: Money Transfer Created
@@ -163,11 +135,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
     queryset = ForeignCurrencyRequest.objects.all()
     serializer_class = ForeignCurrencyRequestSerializer
-<<<<<<< HEAD
     permission_classes = [IsReceiver, IsVerifiedUser]
-=======
-    permission_classes = [IsReceiver]
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
 
     def perform_create(self, serializer):
         request = self.request
@@ -192,12 +160,8 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
                 object_id=foreign_request.id,
                 amount=foreign_request.amount_requested
             )
-<<<<<<< HEAD
 
             foreign_request.status = 'pending'
-=======
-            foreign_request.status = 'approved'
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
             foreign_request.save()
 
             # 🟢 Notification: Foreign Currency Request Created
@@ -211,7 +175,6 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
             return ForeignCurrencyRequest.objects.all()
         return ForeignCurrencyRequest.objects.filter(requester=user)
 
-<<<<<<< HEAD
     @action(detail=True, methods=['patch'], url_path='upload-proof')
     def upload_proof(self, request, pk=None):
         transaction = self.get_object()
@@ -234,9 +197,6 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Proof uploaded and transaction moved to escrow.'}, status=status.HTTP_200_OK)
 
     
-=======
-
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExchangeRate.objects.all()
     serializer_class = ExchangeRateSerializer
@@ -256,14 +216,8 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
             "EUR": eur_to_etb,
             "GBP": gbp_to_etb,
         }
-<<<<<<< HEAD
         return Response(data)  
         
-=======
-        return Response(data)
-
-
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
 class TransactionFeeViewSet(viewsets.ViewSet):
     """
     API for calculating transaction fees.
@@ -275,7 +229,6 @@ class TransactionFeeViewSet(viewsets.ViewSet):
         amount = Decimal(request.GET.get('amount', 0))
         fee = amount * Decimal('0.02')
         return Response({'transaction_fee': str(fee)})
-<<<<<<< HEAD
     
     
     
@@ -289,52 +242,27 @@ class MyTransactionViewSet(viewsets.ViewSet):
         serializer = MoneyTransferSerializer(transfers, many=True)
         return Response(serializer.data)
 # permission_classes = [IsReceiver]
-=======
-
-
-class MyTransactionViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-    @action(detail=False, methods=['get'], url_path='money-transfers', permission_classes=[IsSender])
-    def money_transfers(self, request):
-        transfers = MoneyTransfer.objects.filter(sender=request.user).order_by('-created_at')
-        serializer = MoneyTransferSerializer(transfers, many=True)
-        return Response(serializer.data)
-
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
     @action(detail=False, methods=['get'], url_path='foreign-requests', permission_classes=[IsReceiver])
     def foreign_requests(self, request):
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user).order_by('-created_at')
         serializer = ForeignCurrencyRequestSerializer(requests, many=True)
         return Response(serializer.data)
-<<<<<<< HEAD
 # permission_classes = [IsAuthenticated]
-=======
-
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
     @action(detail=False, methods=['get'], url_path='all')
     def all_transactions(self, request):
         transfers = MoneyTransfer.objects.filter(sender=request.user)
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user)
-<<<<<<< HEAD
 
         transfer_serializer = MoneyTransferSerializer(transfers, many=True)
         request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
 
-=======
-        transfer_serializer = MoneyTransferSerializer(transfers, many=True)
-        request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
         return Response({
             "money_transfers": transfer_serializer.data,
             "foreign_currency_requests": request_serializer.data
         })
-<<<<<<< HEAD
         
         
         
-=======
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
 
 
 # 🚩 Set Alert (CurrencyAlert) Endpoints
@@ -374,7 +302,6 @@ class DeleteCurrencyAlertView(viewsets.ViewSet):
         except CurrencyAlert.DoesNotExist:
             return Response({"error": "Alert not found."}, status=status.HTTP_404_NOT_FOUND)
         alert.delete()
-<<<<<<< HEAD
         return Response(
             {
                 "status": "success",
@@ -468,6 +395,3 @@ class StatusCountViewSet(viewsets.ViewSet):
             combined[f"foreign_request_{item['status']}"] = item['count']
             
         return Response(combined)
-=======
-        return Response({"message": "Alert deleted."}, status=status.HTTP_204_NO_CONTENT)
->>>>>>> 20d002b2 (feat: Add currency rate alert (set alert) API and backend notification integration)
