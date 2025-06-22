@@ -41,4 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 venv/
+Backend/PMF/venv/venv/
 Backend/PMF/venv/
