@@ -6,6 +6,9 @@ from .serializers import EscrowSerializer
 from apps.accounts.permissions import IsAdmin
 from apps.Notifications.models import Notification
 
+from django.db import transaction
+from apps.Transaction.Services.escrow_transaction_service import EscrowTransactionService
+
 class EscrowViewSet(viewsets.ModelViewSet):
     queryset = Escrow.objects.all()
     serializer_class = EscrowSerializer
@@ -14,20 +17,32 @@ class EscrowViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def release(self, request, pk=None):
         escrow = self.get_object()
-        if escrow.status != 'in_escrow':
+        if escrow.status != 'funds_held':
             return Response({'error': 'Cannot release funds at this stage.'}, status=400)
 
-        pmf_eth_wallet = Wallet.objects.get(account_number="PMF-ETH-PAYPAL")
-        pmf_eth_wallet.balance += escrow.amount
-        pmf_eth_wallet.save()
+        with transaction.atomic():
+            escrow.release_funds()
+       
+            try:
+                pmf_eth_wallet = Wallet.objects.get(account_number="PMF-ETH-PAYPAL")
+            except Wallet.DoesNotExist:
+                return Response({'error': 'PMF wallet not found.'}, status=400)
+            
+            pmf_eth_wallet = Wallet.objects.get(account_number="PMF-ETH-PAYPAL")
+            pmf_eth_wallet.balance += escrow.amount
+            pmf_eth_wallet.save()
 
-        TransactionLog.objects.create(
-            source_account="Escrow",
-            destination_account=pmf_eth_wallet.account_number,
-            amount=escrow.amount,
-            description=f"Escrow release for {escrow.content_type} {escrow.object_id}"
-        )
+            TransactionLog.objects.create(
+                source_account="Escrow",
+                destination_account=pmf_eth_wallet.account_number,
+                amount=escrow.amount,
+                description=f"Escrow release for {escrow.content_type} {escrow.object_id}"
+            )
 
+     
+
+        
+        return Response({'message': 'Funds released and transactions updated.'}, status=200)
         escrow.release_funds()
 
         # 🟢 Notification: Funds released
@@ -47,7 +62,9 @@ class EscrowViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def refund(self, request, pk=None):
         escrow = self.get_object()
-        if escrow.status in ['in_escrow', 'disputed']:
+        if escrow.status not in ['funds_held', 'disputed']:
+            return Response({'error': 'Cannot refund funds at this stage.'}, status=400)
+        with transaction.atomic():    
             escrow.refund_funds()
 
             # 🟢 Notification: Funds refunded
@@ -62,12 +79,13 @@ class EscrowViewSet(viewsets.ModelViewSet):
                 pass
 
             return Response({'message': 'Funds refunded.'}, status=200)
-        return Response({'error': 'Cannot refund funds at this stage.'}, status=400)
 
     @action(detail=True, methods=['post'])
     def dispute(self, request, pk=None):
         escrow = self.get_object()
-        if escrow.status == 'in_escrow':
+        if escrow.status != 'funds_held':
+            return Response({'error': 'Cannot dispute this escrow.'}, status=400)
+        with transaction.atomic():
             escrow.mark_as_disputed()
             # 🟢 Notification: Escrow disputed
             try:

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import KYCCreateView, KYCAdminUpdateView, UserKYCStatusView, KYCUpdateView, KYCPartialUpdateView, UserKYCDetailView
+from .views import KYCCreateView, KYCAdminUpdateView, UserKYCStatusView, KYCUpdateView, KYCPartialUpdateView, UserKYCDetailView, KYCListView, KYCTotalsView
 
 
 urlpatterns = [
@@ -9,5 +9,7 @@ urlpatterns = [
    path('update/', KYCUpdateView.as_view(), name='kyc-update'),
    path('partial-update/', KYCPartialUpdateView.as_view(), name='kyc-partial-update'),
    path('detail/', UserKYCDetailView.as_view(), name='kyc-detail'),
+   path('list/', KYCListView.as_view(), name='kyc-list'),
+   path('totals/',KYCTotalsView.as_view(), name='kyc-totals')
 
 ]
