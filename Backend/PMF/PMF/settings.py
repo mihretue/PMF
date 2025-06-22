@@ -34,7 +34,6 @@ cloudinary.config(
   api_secret=os.getenv("CLOUD_API_SECRET") 
 )
 
-
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'
 
@@ -49,8 +48,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+<<<<<<< HEAD
+=======
 CELERY_TASK_ALWAYS_EAGER = True
 
+>>>>>>> origin/OTP_Integration
 # Application definition
 
 INSTALLED_APPS = [
@@ -63,25 +65,31 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'oauth2_provider',  
-    'rest_framework_simplejwt', 
+    'rest_framework.authtoken',
+    'oauth2_provider',
     "django_celery_beat",
     'corsheaders',
-    'rest_framework_simplejwt.token_blacklist',
-    
+
     # apps
     'apps.accounts',
     'apps.KYC',
     'apps.Transaction',
     'apps.Escrow',
-    'apps.PaymentTransaction'
-    
-    
-    
-    
+    'apps.PaymentTransaction',
+    'apps.Notifications',
 ]
 
 REST_FRAMEWORK = {
+<<<<<<< HEAD
+    'DEFAULT_AUTHENICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.permissions.AllowAny',
+    ],
+=======
 'DEFAULT_AUTHENTICATION_CLASSES': [
     'rest_framework_simplejwt.authentication.JWTAuthentication',  
     'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
@@ -91,21 +99,20 @@ REST_FRAMEWORK = {
 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 'PAGE_SIZE': 10,
 # 'rest_framework.permissions.AllowAny',
+>>>>>>> origin/OTP_Integration
     # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.IsAuthenticated',  # Only allow authenticated users
+    #     'rest_framework.permissions.IsAuthenticated',
     # ],
 }
-# settings.py
 
-CELERY_BROKER_URL = 'redis://localhost:6380/0'  # Use Redis as a message broker
+# Celery settings
+CELERY_BROKER_URL = 'redis://localhost:6380/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-
-#static files
+# Static files
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = "/static/"
-
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
@@ -120,7 +127,6 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
-
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -154,40 +160,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'PMF.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
+        default=os.getenv("DATABASE_URL", "sqlite:///db.sqlite3"),
         conn_max_age=600,
     )
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'pay_my_fees',
-#         'USER': 'mihretu',
-#         'PASSWORD': 'ndkBdJmRtxhUTubwcssWdtwHeerbTYwb',
-#         'HOST': 'postgres-xmle.railway.internal',
-#         'PORT': '5432',
-#     }
-# }
-
-
 # Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -203,42 +184,39 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 STATIC_URL = 'static/'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
-# settings.py
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development purposes
-
-# settings.py
+# EMAIL settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # or another SMTP provider
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mihretuendeshaw84@gmail.com'
 EMAIL_HOST_PASSWORD = 'qymy eawv mzuz kuzq'  # use an app password if using Gmail
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development purposes
+
+# -------------- REMOVED ASGI/CHANNELS SETTINGS BELOW ---------------
+# ASGI_APPLICATION = 'PMF.asgi.application'
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("127.0.0.0", 6379)], 
+#         },
+#     },
+# }
+# -------------------------------------------------------------------
