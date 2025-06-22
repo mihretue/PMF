@@ -1,6 +1,6 @@
-from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import MoneyTransferViewSet, ForeignCurrencyRequestViewSet, ExchangeRateViewSet, TransactionFeeViewSet, MyTransactionViewSet, ExchangeRateView, DailyExchangeRateViewSet, RecentTransactionViewSet,StatusCountViewSet,DeleteCurrencyAlertView, CreateCurrencyAlertView, UpdateCurrencyAlertView
+from django.urls import path, include
 
 router = DefaultRouter()
 router.register(r'money-transfers', MoneyTransferViewSet)
@@ -17,5 +17,10 @@ router.register(r'currency-alerts-create', CreateCurrencyAlertView, basename='cu
 router.register(r'currency-alerts-update', UpdateCurrencyAlertView, basename='currency-alerts-updat')
 
 urlpatterns = [
+    # Currency Alert endpoints (explicit so you can POST, PATCH, DELETE easily)
+    path('currency-alerts/', CreateCurrencyAlertView.as_view({'post': 'post'}), name='currency-alert-create'),
+    path('currency-alerts/<int:pk>/', UpdateCurrencyAlertView.as_view({'patch': 'patch'}), name='currency-alert-update'),
+    path('currency-alerts/<int:pk>/delete/', DeleteCurrencyAlertView.as_view({'delete': 'delete'}), name='currency-alert-delete'),
+    # All other endpoints
     path('', include(router.urls)),
 ]
