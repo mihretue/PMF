@@ -1,27 +1,17 @@
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
-<<<<<<< HEAD
-from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
-from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet
-from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer, TransactionLogSerializer
-from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver
-=======
 from rest_framework.decorators import action, api_view, APIView
 from rest_framework.exceptions import PermissionDenied
 from .models import MoneyTransfer, ForeignCurrencyRequest, ExchangeRate, TransactionLog, Wallet, DailyExchangeRate,CurrencyAlert
 from .serializers import MoneyTransferSerializer, ForeignCurrencyRequestSerializer, ExchangeRateSerializer, WalletSerializer,TransactionLogSerializer, DailyExchangeRateSerializer,CurrencyAlertSerializer
 from apps.accounts.permissions import IsSender, IsAdmin, IsAdminOrReceiver, IsAdminOrSender, IsSenderOrReceiver, IsReceiver,IsVerifiedUser
->>>>>>> origin/OTP_Integration
 from .services import get_live_exchange_rate
 from decimal import Decimal
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
 from .signals import create_wallet_for_new_user
-<<<<<<< HEAD
 from apps.Notifications.models import Notification  # 🟢 Import Notification
-=======
 from .services import get_live_exchange_rate
 from datetime import datetime
 from django.db.models import F
@@ -29,7 +19,14 @@ from django.utils.timezone import now, timedelta
 from itertools import chain
 from django.db.models import Count
 
->>>>>>> origin/OTP_Integration
+
+
+def notify(user, message):
+    try:
+        Notification.objects.create(user=user, message=message)
+    except Exception:
+        pass
+
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
     """
@@ -47,16 +44,12 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
         account_number= request.data.get('account_number', 'SENDER-PAYPAL-TEST')
         with transaction.atomic():
             transfer = serializer.save(sender=request.user)
-<<<<<<< HEAD
-            transfer.transaction_fee = transfer.calculate_transaction_fee()
-=======
             
             # 2. Calculate and set transaction fee
             transfer.transaction_fee = transfer.total_fee()
             
             # 4. Validate sender balance
             # try:
->>>>>>> origin/OTP_Integration
             sender_wallet, created = Wallet.objects.get_or_create(
                 account_number="SENDER-PAYPAL-TEST",
                 defaults={"balance": 10000, "currency": "USD"}
@@ -82,27 +75,16 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
                 content_type=ContentType.objects.get_for_model(transfer),
                 object_id=transfer.id,
                 amount=transfer.amount,
-<<<<<<< HEAD
-                status='in_escrow'
-            )
-            transfer.status = 'in_escrow'
-=======
                 status='pending'  # Set initial status to 'in_escrow'
             )
             
             # Explicitly save transfer after all updates
             transfer.status = 'pending'  # Set status to 'in_escrow'
->>>>>>> origin/OTP_Integration
             transfer.save()
 
             # 🟢 Notification: Money Transfer Created
-            try:
-                Notification.objects.create(
-                    user=request.user,
-                    message=f"Your money transfer (ID: {transfer.id}) has been initiated and funds are now held in escrow."
-                )
-            except Exception:
-                pass
+            notify(request.user, f"Your money transfer (ID: {transfer.id}) has been initiated and funds are now held in escrow.")
+
 
     def get_queryset(self):
         user = self.request.user
@@ -122,14 +104,10 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             return Response({"error": "Only pending transactions can be canceled."}, status=status.HTTP_400_BAD_REQUEST)
         money_transfer.status = 'canceled'
         money_transfer.save()
-        # 🟢 Notification: Money Transfer Canceled
-        try:
-            Notification.objects.create(
-                user=money_transfer.sender,
-                message=f"Your money transfer (ID: {money_transfer.id}) has been canceled."
-            )
-        except Exception:
-            pass
+        
+        
+        notify(request.user, f"Your money transfer (ID: {transfer.id}) has been canceled.")
+
         return Response({"message": "Transaction canceled successfully."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'], url_path='upload-proof')
@@ -156,11 +134,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
     queryset = ForeignCurrencyRequest.objects.all()
     serializer_class = ForeignCurrencyRequestSerializer
-<<<<<<< HEAD
-    permission_classes = [IsReceiver]
-=======
     permission_classes = [IsReceiver, IsVerifiedUser]
->>>>>>> origin/OTP_Integration
 
     def perform_create(self, serializer):
         request = self.request
@@ -185,22 +159,14 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
                 object_id=foreign_request.id,
                 amount=foreign_request.amount_requested
             )
-<<<<<<< HEAD
-            foreign_request.status = 'approved'
-=======
 
             foreign_request.status = 'pending'
->>>>>>> origin/OTP_Integration
             foreign_request.save()
 
             # 🟢 Notification: Foreign Currency Request Created
-            try:
-                Notification.objects.create(
-                    user=request.user,
-                    message=f"Your foreign currency request (ID: {foreign_request.id}) has been submitted and escrowed."
-                )
-            except Exception:
-                pass
+            
+            notify(request.user, f"Your foreign currency request (ID: {foreign_request.id}) has been submitted and escrowed.")
+
 
     def get_queryset(self):
         user = self.request.user
@@ -208,9 +174,6 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
             return ForeignCurrencyRequest.objects.all()
         return ForeignCurrencyRequest.objects.filter(requester=user)
 
-<<<<<<< HEAD
-
-=======
     @action(detail=True, methods=['patch'], url_path='upload-proof')
     def upload_proof(self, request, pk=None):
         transaction = self.get_object()
@@ -233,7 +196,6 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Proof uploaded and transaction moved to escrow.'}, status=status.HTTP_200_OK)
 
     
->>>>>>> origin/OTP_Integration
 class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExchangeRate.objects.all()
     serializer_class = ExchangeRateSerializer
@@ -242,13 +204,9 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request):
         usd_to_etb = get_live_exchange_rate("USD", "ETB")
         eur_to_etb = get_live_exchange_rate("EUR", "ETB")
-<<<<<<< HEAD
-        if not usd_to_etb or not eur_to_etb:
-=======
         gbp_to_etb = get_live_exchange_rate("GBP", "ETB")
 
         if not usd_to_etb or not eur_to_etb or not gbp_to_etb:
->>>>>>> origin/OTP_Integration
             return Response(
                 {"error": "Exchange rates unavailable"}, 
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
@@ -258,13 +216,8 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
             "EUR": eur_to_etb,
             "GBP":gbp_to_etb,
         }
-<<<<<<< HEAD
-        return Response(data)      
-
-=======
         return Response(data)  
         
->>>>>>> origin/OTP_Integration
 class TransactionFeeViewSet(viewsets.ViewSet):
     """
     API for calculating transaction fees.
@@ -276,12 +229,6 @@ class TransactionFeeViewSet(viewsets.ViewSet):
         amount = Decimal(request.GET.get('amount', 0))
         fee = amount * Decimal('0.02')
         return Response({'transaction_fee': str(fee)})
-<<<<<<< HEAD
-
-class MyTransactionViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-=======
     
     
     
@@ -289,39 +236,22 @@ class MyTransactionViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 # permission_classes = [IsSender]
->>>>>>> origin/OTP_Integration
     @action(detail=False, methods=['get'], url_path='money-transfers',permission_classes=[IsSender])
     def money_transfers(self, request): 
         transfers = MoneyTransfer.objects.filter(sender=request.user).order_by('-created_at')
         serializer = MoneyTransferSerializer(transfers, many=True)
         return Response(serializer.data)
-<<<<<<< HEAD
-
-=======
 # permission_classes = [IsReceiver]
->>>>>>> origin/OTP_Integration
     @action(detail=False, methods=['get'], url_path='foreign-requests', permission_classes=[IsReceiver])
     def foreign_requests(self, request):
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user).order_by('-created_at')
         serializer = ForeignCurrencyRequestSerializer(requests, many=True)
         return Response(serializer.data)
-<<<<<<< HEAD
-
-=======
 # permission_classes = [IsAuthenticated]
->>>>>>> origin/OTP_Integration
     @action(detail=False, methods=['get'], url_path='all')
     def all_transactions(self, request):
         transfers = MoneyTransfer.objects.filter(sender=request.user)
         requests = ForeignCurrencyRequest.objects.filter(requester=request.user)
-<<<<<<< HEAD
-        transfer_serializer = MoneyTransferSerializer(transfers, many=True)
-        request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
-        return Response({
-            "money_transfers": transfer_serializer.data,
-            "foreign_currency_requests": request_serializer.data
-        })
-=======
 
         transfer_serializer = MoneyTransferSerializer(transfers, many=True)
         request_serializer = ForeignCurrencyRequestSerializer(requests, many=True)
@@ -603,4 +533,3 @@ class StatusCountViewSet(viewsets.ViewSet):
             combined[f"foreign_request_{item['status']}"] = item['count']
             
         return Response(combined)
->>>>>>> origin/OTP_Integration

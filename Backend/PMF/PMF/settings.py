@@ -48,11 +48,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-<<<<<<< HEAD
-=======
 CELERY_TASK_ALWAYS_EAGER = True
 
->>>>>>> origin/OTP_Integration
 # Application definition
 
 INSTALLED_APPS = [
@@ -80,7 +77,6 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-<<<<<<< HEAD
     'DEFAULT_AUTHENICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
@@ -89,17 +85,15 @@ REST_FRAMEWORK = {
         # 'rest_framework.authentication.TokenAuthentication',
         # 'rest_framework.permissions.AllowAny',
     ],
-=======
-'DEFAULT_AUTHENTICATION_CLASSES': [
-    'rest_framework_simplejwt.authentication.JWTAuthentication',  
-    'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-    'rest_framework.authentication.SessionAuthentication',
-    'rest_framework.authentication.BasicAuthentication',
-],
+# 'DEFAULT_AUTHENTICATION_CLASSES': [
+#     'rest_framework_simplejwt.authentication.JWTAuthentication',  
+#     'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+#     'rest_framework.authentication.SessionAuthentication',
+#     'rest_framework.authentication.BasicAuthentication',
+# ],
 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 'PAGE_SIZE': 10,
 # 'rest_framework.permissions.AllowAny',
->>>>>>> origin/OTP_Integration
     # 'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',
     # ],
