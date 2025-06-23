@@ -77,27 +77,14 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-        # 'rest_framework.authentication.TokenAuthentication',
-        # 'rest_framework.permissions.AllowAny',
     ],
-# 'DEFAULT_AUTHENTICATION_CLASSES': [
-#     'rest_framework_simplejwt.authentication.JWTAuthentication',  
-#     'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-#     'rest_framework.authentication.SessionAuthentication',
-#     'rest_framework.authentication.BasicAuthentication',
-# ],
-'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-'PAGE_SIZE': 10,
-# 'rest_framework.permissions.AllowAny',
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ],
 }
+
 
 # Celery settings
 CELERY_BROKER_URL = 'redis://localhost:6380/0'
