@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { GridColDef, GridCellParams } from "@mui/x-data-grid";
 import Table from "../common/Table";
 import StatsCards from "./StatsCards";
-import TransactionDetailModal from "./TransactionDetailModal";
-import { Transaction } from "./TransactionDetailModal";
+import TransactionDetailModal from "../transactions/TransactionDetailModal";
+import { Transaction } from "../transactions/TransactionDetailModal";
 import StatusButtonSmall from "../common/StatusButtonSmall";
 import Link from "next/link";
 import EmptyStateMessage from "../common/EmptyStateMessage";
@@ -53,7 +53,7 @@ export default function Dashboard() {
       minWidth: 140,
       flex: 0.2,
       headerClassName: "custom-header",
-      renderCell: (params: GridCellParams) => {
+      renderCell: (params: GridCellParams<Transaction, Transaction["status"]>) => {
         const transactionStatus = params.value as string;
         const colorMap: Record<string, string> = {
           Completed: "#32CD32",
@@ -75,9 +75,7 @@ export default function Dashboard() {
       minWidth: 120,
       flex: 0.2,
       headerClassName: "custom-header",
-      renderCell: (
-        params: GridCellParams<Transaction, Transaction["amount"]>
-      ) => (
+      renderCell: (params: GridCellParams<Transaction, Transaction["amount"]>) => (
         <Box
           sx={{
             height: "100%",
@@ -103,8 +101,8 @@ export default function Dashboard() {
       minWidth: 120,
       flex: 0.2,
       headerClassName: "custom-header",
-      valueFormatter: (params) =>
-        new Date(params.value as string).toLocaleDateString(),
+      valueFormatter: (params: { value: Date | string }) =>
+        new Date(params.value).toLocaleDateString(),
     },
     {
       field: "actions",
@@ -119,7 +117,7 @@ export default function Dashboard() {
           startIcon={<VisibilityOutlinedIcon fontSize="small" />}
           onClick={(e) => {
             e.stopPropagation();
-            handleRowClick(params.row);
+            handleRowClick(params.row as Transaction);
           }}
           sx={{
             textTransform: "none",
@@ -136,7 +134,6 @@ export default function Dashboard() {
       ),
     },
   ];
-
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex flex-col overflow-hidden">

@@ -33,7 +33,7 @@ export interface KYCFormData {
   isVerified: boolean
 }
 
-export default function kyc() {
+export default function Kyc() {  // Changed from 'kyc' to 'Kyc'
 //   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<KYCFormData>({

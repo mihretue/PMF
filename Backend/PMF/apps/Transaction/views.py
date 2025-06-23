@@ -11,12 +11,21 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from apps.Escrow.models import Escrow
 from .signals import create_wallet_for_new_user
+from apps.Notifications.models import Notification  # 🟢 Import Notification
 from .services import get_live_exchange_rate
 from datetime import datetime
 from django.db.models import F
 from django.utils.timezone import now, timedelta
 from itertools import chain
 from django.db.models import Count
+
+
+
+def notify(user, message):
+    try:
+        Notification.objects.create(user=user, message=message)
+    except Exception:
+        pass
 
 
 class MoneyTransferViewSet(viewsets.ModelViewSet):
@@ -31,10 +40,9 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         request = self.request
-        currency_to = request.data.get('currency_to', 'ETB')  # Default to ETB
-        account_number= request.data.get('account_number', 'SENDER-PAYPAL-TEST')  # Default account number
+        currency_to = request.data.get('currency_to', 'ETB')
+        account_number= request.data.get('account_number', 'SENDER-PAYPAL-TEST')
         with transaction.atomic():
-            # 1. Save the transfer instance
             transfer = serializer.save(sender=request.user)
             
             # 2. Calculate and set transaction fee
@@ -43,36 +51,26 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             # 4. Validate sender balance
             # try:
             sender_wallet, created = Wallet.objects.get_or_create(
-                    account_number="SENDER-PAYPAL-TEST",
-                    defaults={"balance": 10000, "currency": "USD"}
-                )
-
-            # except Wallet.DoesNotExist:
-            #     raise serializers.ValidationError({"error": "Sender wallet not found."})
-
+                account_number="SENDER-PAYPAL-TEST",
+                defaults={"balance": 10000, "currency": "USD"}
+            )
             total_deduct = transfer.amount + transfer.transaction_fee
             if sender_wallet.balance < total_deduct:
                 raise serializers.ValidationError(
                     {"error": "Insufficient funds."},
                     code="insufficient_funds"
                 )
-            
-            # 5. Update wallets
             sender_wallet.balance -= total_deduct
             sender_wallet.save()
-            
             pmf_eth_wallet = Wallet.objects.get(account_number=account_number)
             pmf_eth_wallet.balance += transfer.amount
             pmf_eth_wallet.save()
-            
-            # 6. Log transaction and create escrow
             TransactionLog.objects.create(
                 source_account=sender_wallet.account_number,
                 destination_account=pmf_eth_wallet.account_number,
                 amount=transfer.amount,
                 description=f"MoneyTransfer #{transfer.id}"
             )
-            
             Escrow.objects.create(
                 content_type=ContentType.objects.get_for_model(transfer),
                 object_id=transfer.id,
@@ -84,14 +82,14 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
             transfer.status = 'pending'  # Set status to 'in_escrow'
             transfer.save()
 
-    
+            # 🟢 Notification: Money Transfer Created
+            notify(request.user, f"Your money transfer (ID: {transfer.id}) has been initiated and funds are now held in escrow.")
+
+
     def get_queryset(self):
-        """
-        Users can see only transactions where they are **senders**.
-        """
         user = self.request.user
         if user.is_admin():
-            return MoneyTransfer.objects.all()  # Admins can see all transactions
+            return MoneyTransfer.objects.all()
         return MoneyTransfer.objects.filter(sender=user)
 
     @action(detail=True, methods=['POST'])
@@ -100,16 +98,16 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
         Allow users to cancel their own **pending** money transfers.
         """
         money_transfer = self.get_object()
-
-        # Only the sender can cancel their transaction
         if money_transfer.sender != request.user:
             return Response({"error": "You can only cancel your own transactions."}, status=status.HTTP_403_FORBIDDEN)
-
         if money_transfer.status != 'pending':
             return Response({"error": "Only pending transactions can be canceled."}, status=status.HTTP_400_BAD_REQUEST)
-
         money_transfer.status = 'canceled'
         money_transfer.save()
+        
+        
+        notify(request.user, f"Your money transfer (ID: {transfer.id}) has been canceled.")
+
         return Response({"message": "Transaction canceled successfully."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'], url_path='upload-proof')
@@ -144,28 +142,18 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
             foreign_request = serializer.save(requester=request.user)
             foreign_request.transaction_fee = foreign_request.total_fee()
             foreign_request.save()
-
-            # Fetch PMF EURO wallet (assuming it's your source pool for foreign currency)
             pmf_euro_wallet = Wallet.objects.get(account_number="PMF-EURO-PAYPAL")
-
             total_deduct = foreign_request.amount_requested + foreign_request.transaction_fee
-
             if pmf_euro_wallet.balance < total_deduct:
                 raise PermissionDenied("Insufficient funds in PMF EURO account.")
-
-            # Deduct from PMF EURO
             pmf_euro_wallet.balance -= total_deduct
             pmf_euro_wallet.save()
-
-            # Log transaction
             TransactionLog.objects.create(
                 source_account=pmf_euro_wallet.account_number,
                 destination_account="Escrow",
                 amount=foreign_request.amount_requested,
                 description=f"Foreign Currency Request #{foreign_request.id} escrowed"
             )
-
-            # Create Escrow
             Escrow.objects.create(
                 content_type=ContentType.objects.get_for_model(foreign_request),
                 object_id=foreign_request.id,
@@ -174,6 +162,11 @@ class ForeignCurrencyRequestViewSet(viewsets.ModelViewSet):
 
             foreign_request.status = 'pending'
             foreign_request.save()
+
+            # 🟢 Notification: Foreign Currency Request Created
+            
+            notify(request.user, f"Your foreign currency request (ID: {foreign_request.id}) has been submitted and escrowed.")
+
 
     def get_queryset(self):
         user = self.request.user
@@ -209,7 +202,6 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def list(self, request):
-        # Fetch only USD→ETB and EUR→ETB
         usd_to_etb = get_live_exchange_rate("USD", "ETB")
         eur_to_etb = get_live_exchange_rate("EUR", "ETB")
         gbp_to_etb = get_live_exchange_rate("GBP", "ETB")
@@ -219,8 +211,6 @@ class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
                 {"error": "Exchange rates unavailable"}, 
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
-
-        # Format response to match dropdown UI
         data = {
             "USD": usd_to_etb,
             "EUR": eur_to_etb,
@@ -235,7 +225,7 @@ class TransactionFeeViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
     @action(detail=False, methods=['GET'], url_path='calculate-fee')
-    def calculate_transaction_fee(self, request):  # Added 'self'
+    def calculate_transaction_fee(self, request):
         amount = Decimal(request.GET.get('amount', 0))
         fee = amount * Decimal('0.02')
         return Response({'transaction_fee': str(fee)})

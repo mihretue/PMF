@@ -6,6 +6,7 @@ from rest_framework.generics import ListAPIView
 from .models import KYC
 from .serializers import KYCSerializer
 from apps.accounts.permissions import IsAdmin, IsSenderOrReceiver
+from apps.Notifications.models import Notification
 
 
 class KYCCreateView(APIView):
@@ -14,17 +15,29 @@ class KYCCreateView(APIView):
     def post(self, request):
         serializer = KYCSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            kyc = serializer.save(user=request.user)
+
+            # Notify user on KYC submission
+            try:
+                Notification.objects.create(
+                    user=request.user,
+                    message="Your KYC has been submitted and is under review."
+                )
+            except Exception:
+                pass
+
             return Response({
                 'status': 'success',
                 'data': serializer.data,
                 'message': 'KYC submitted successfully'
             }, status=status.HTTP_201_CREATED)
+
         return Response({
             'status': 'error',
             'errors': serializer.errors,
             'message': 'KYC submission failed'
         }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserKYCStatusView(APIView):
     permission_classes = [IsSenderOrReceiver]
@@ -44,19 +57,62 @@ class UserKYCStatusView(APIView):
                 'message': 'No KYC submission found'
             })
 
+
+class KYCAdminUpdateView(APIView):
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, kyc_id):
+        try:
+            kyc = KYC.objects.get(id=kyc_id)
+        except KYC.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': 'KYC record not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        old_status = kyc.verification_status
+        serializer = KYCSerializer(kyc, data=request.data, partial=True, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+
+            # Notify user if status changed
+            if kyc.verification_status != old_status:
+                try:
+                    if kyc.verification_status == 'approved':
+                        message = "Your KYC has been approved. You can now access all services."
+                    elif kyc.verification_status == 'rejected':
+                        message = "Your KYC was rejected. Please review your documents and resubmit."
+                    else:
+                        message = f"Your KYC status is now '{kyc.verification_status}'."
+
+                    Notification.objects.create(
+                        user=kyc.user,
+                        message=message
+                    )
+                except Exception:
+                    pass
+
+            return Response({
+                'status': 'success',
+                'data': serializer.data,
+                'message': 'KYC status updated successfully'
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            'status': 'error',
+            'errors': serializer.errors,
+            'message': 'Validation failed'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
 class KYCUpdateView(APIView):
-    """PUT endpoint for full KYC updates"""
     permission_classes = [IsSenderOrReceiver]
 
-    def get_kyc(self, user):
-        try:
-            return KYC.objects.get(user=user)
-        except KYC.DoesNotExist:
-            return None
-
     def put(self, request):
-        kyc = self.get_kyc(request.user)
-        if not kyc:
+        try:
+            kyc = KYC.objects.get(user=request.user)
+        except KYC.DoesNotExist:
             return Response({
                 'status': 'error',
                 'message': 'KYC record not found'
@@ -68,13 +124,7 @@ class KYCUpdateView(APIView):
                 'message': 'Only pending KYC can be modified'
             }, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = KYCSerializer(
-            kyc, 
-            data=request.data, 
-            partial=False,
-            context={'request': request}
-        )
-        
+        serializer = KYCSerializer(kyc, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -82,26 +132,20 @@ class KYCUpdateView(APIView):
                 'data': serializer.data,
                 'message': 'KYC fully updated'
             })
-            
         return Response({
             'status': 'error',
             'errors': serializer.errors,
             'message': 'Full update validation failed'
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
 class KYCPartialUpdateView(APIView):
-    """PATCH endpoint for partial KYC updates"""
     permission_classes = [IsSenderOrReceiver]
 
-    def get_kyc(self, user):
-        try:
-            return KYC.objects.get(user=user)
-        except KYC.DoesNotExist:
-            return None
-
     def patch(self, request):
-        kyc = self.get_kyc(request.user)
-        if not kyc:
+        try:
+            kyc = KYC.objects.get(user=request.user)
+        except KYC.DoesNotExist:
             return Response({
                 'status': 'error',
                 'message': 'KYC record not found'
@@ -113,13 +157,7 @@ class KYCPartialUpdateView(APIView):
                 'message': 'Only pending KYC can be modified'
             }, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = KYCSerializer(
-            kyc,
-            data=request.data,
-            partial=True,
-            context={'request': request}
-        )
-        
+        serializer = KYCSerializer(kyc, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -127,12 +165,12 @@ class KYCPartialUpdateView(APIView):
                 'data': serializer.data,
                 'message': 'KYC partially updated'
             })
-            
         return Response({
             'status': 'error',
             'errors': serializer.errors,
             'message': 'Partial update validation failed'
         }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserKYCDetailView(APIView):
     permission_classes = [IsSenderOrReceiver]
@@ -152,38 +190,6 @@ class UserKYCDetailView(APIView):
                 'message': 'KYC record not found'
             }, status=status.HTTP_404_NOT_FOUND)
 
-class KYCAdminUpdateView(APIView):
-    permission_classes = [IsAdmin]
-
-    def patch(self, request, kyc_id):
-        try:
-            kyc = KYC.objects.get(id=kyc_id)
-        except KYC.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': 'KYC record not found'
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = KYCSerializer(
-            kyc,
-            data=request.data,
-            partial=True,
-            context={'request': request}
-        )
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'status': 'success',
-                'data': serializer.data,
-                'message': 'Admin KYC update successful'
-            })
-            
-        return Response({
-            'status': 'error',
-            'errors': serializer.errors,
-            'message': 'Admin validation failed'
-        }, status=status.HTTP_400_BAD_REQUEST)
 
 class KYCListView(ListAPIView):
     permission_classes = [IsAdmin]
@@ -198,6 +204,7 @@ class KYCListView(ListAPIView):
             'data': response.data,
             'message': 'KYC list retrieved'
         })
+
 
 class KYCTotalsView(APIView):
     permission_classes = [IsAdmin]
