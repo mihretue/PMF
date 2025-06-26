@@ -62,7 +62,7 @@ class MoneyTransferViewSet(viewsets.ModelViewSet):
                 )
             sender_wallet.balance -= total_deduct
             sender_wallet.save()
-            pmf_eth_wallet = Wallet.objects.get(account_number=account_number)
+            pmf_wallet = Wallet.objects.get(account_number="PMF-EURO-PAYPAL")
             pmf_eth_wallet.balance += transfer.amount
             pmf_eth_wallet.save()
             TransactionLog.objects.create(
