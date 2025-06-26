@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'oauth2_provider',
     "django_celery_beat",
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
+
 
     # apps
     'apps.accounts',
