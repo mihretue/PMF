@@ -4,6 +4,8 @@ from apps.Transaction.models import MoneyTransfer
 from .models import Escrow
 from .tasks import create_escrow_for_transfer, update_related_transactions  # your refactored plain functions
 from apps.Notifications.models import Notification
+from django.contrib.contenttypes.models import ContentType
+
 
 @receiver(post_save, sender=MoneyTransfer)
 def create_escrow_for_transfer(sender, instance, created, **kwargs):
