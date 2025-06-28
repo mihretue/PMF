@@ -44,3 +44,12 @@ class IsVerifiedUser(permissions.BasePermission):
             raise PermissionDenied(detail="Your KYC is not verified. Please verify your account to proceed.")
         
         return True
+    
+    
+class IsActiveOrDeleting(BasePermission):
+    def has_permission(self, request, view):
+        # Allow if deleting account
+        if isinstance(view, DeleteAccountView):
+            return True
+        # Or allow if user is authenticated and active
+        return request.user.is_authenticated and request.user.is_active

@@ -27,7 +27,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.password_validation import validate_password
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsActiveOrDeleting
 
 # 🟢 Import Notification model
 from apps.Notifications.models import Notification
@@ -416,7 +416,7 @@ class UpdateProfileView(generics.UpdateAPIView):
             )
             
 class DeleteAccountView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsActiveOrDeleting]
 
     def delete(self, request):
         user = request.user
