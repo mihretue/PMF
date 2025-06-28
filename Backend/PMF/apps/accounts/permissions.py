@@ -46,7 +46,7 @@ class IsVerifiedUser(permissions.BasePermission):
         return True
     
     
-class IsActiveOrDeleting(BasePermission):
+class IsActiveOrDeleting(permissions.BasePermission):
     def has_permission(self, request, view):
         # Allow if deleting account
         if isinstance(view, DeleteAccountView):
