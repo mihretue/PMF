@@ -23,10 +23,10 @@ class BaseTransaction(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        # ('failed', 'Failed'),
         ('canceled', 'Canceled'),
         ('in_escrow', 'In Escrow'),
-        ('released', 'Released'),
+        # ('released', 'Released'),
         ('disputed', 'Disputed')
     ]
     
@@ -42,6 +42,15 @@ class BaseTransaction(models.Model):
             with transaction.atomic():
                 self.status = self.get_mapped_status(self.escrow.status)
                 self.save()
+    def check_and_update_escrow_status(self, old_instance=None):
+        if not self.escrow:
+            return
+
+        proof_uploaded = self.proof_document and (not old_instance or not old_instance.proof_document)
+
+        if proof_uploaded and self.escrow.status != 'funds_held':
+            self.escrow.status = 'funds_held'
+            self.escrow.save()  # This will trigger the escrow post_save signal and update the transaction status
 
     @staticmethod
     def get_mapped_status(escrow_status):
@@ -104,6 +113,9 @@ class MoneyTransfer(BaseTransaction):
                 self.save()
             return self.escrow
     def save(self, *args, **kwargs):
+        old_instance = None
+        if self.pk:
+            old_instance = MoneyTransfer.objects.filter(pk=self.pk).first()
         if not self.bank_fee:
             self.bank_fee = self.calculate_bank_fee()
         if not self.pmf_fee:
@@ -111,6 +123,7 @@ class MoneyTransfer(BaseTransaction):
         if not self.transaction_fee:
             self.transaction_fee = self.total_fee()
         super().save(*args, **kwargs)
+        self.check_and_update_escrow_status(old_instance)
 
 class ForeignCurrencyRequest(BaseTransaction):
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="foreign_currency_requests")
@@ -171,6 +184,11 @@ class ForeignCurrencyRequest(BaseTransaction):
             return self.escrow
         
     def save(self, *args, **kwargs):
+        
+        old_instance = None
+        if self.pk:
+            old_instance = ForeignCurrencyRequest.objects.filter(pk=self.pk).first()
+            
         if not self.bank_fee:
             self.bank_fee = self.calculate_bank_fee()
         if not self.pmf_fee:
@@ -183,6 +201,7 @@ class ForeignCurrencyRequest(BaseTransaction):
             if rate:
                 self.exchange_rate = rate
         super().save(*args, **kwargs)
+        self.check_and_update_escrow_status(old_instance)
         
 class ExchangeRate(models.Model):
     """

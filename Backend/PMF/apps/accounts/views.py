@@ -372,3 +372,164 @@ class TotalUserView(APIView):
         return Response({
             "total_users": total_users
         }, status=status.HTTP_200_OK)    
+        
+        
+        
+class UpdateProfileView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]  # For file uploads
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            self.perform_update(serializer)
+            
+            # 🟢 Notification: Profile updated
+            try:
+                Notification.objects.create(
+                    user=user,
+                    message="Your profile was updated successfully."
+                )
+            except Exception as notify_error:
+                logger.warning(f"Could not create notification: {notify_error}")
+
+            return Response({
+                "message": "Profile updated successfully",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Profile update failed: {str(e)}")
+            return Response(
+                {"error": "An error occurred while updating profile"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        password = request.data.get("password")  # Require password confirmation
+
+        if not password:
+            return Response(
+                {"error": "Password is required for account deletion"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Incorrect password"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            # 🟢 Notification: Account deletion (sent before actual deletion)
+            try:
+                Notification.objects.create(
+                    user=user,
+                    message="Your account has been deleted. We're sorry to see you go."
+                )
+            except Exception as notify_error:
+                logger.warning(f"Could not create deletion notification: {notify_error}")
+
+            # Logout all sessions
+            RefreshToken.for_user(user).blacklist()
+            
+            # Soft delete (recommended)
+            user.is_active = False
+            user.deleted_at = now()
+            user.save()
+
+            # Alternative: Hard delete
+            # user.delete()
+
+            return Response(
+                {"message": "Account deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT
+            )
+
+        except Exception as e:
+            logger.error(f"Account deletion failed: {str(e)}")
+            return Response(
+                {"error": "Account deletion failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+            
+class UpdateAccountView(generics.UpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        email_changed = 'email' in request.data and request.data['email'] != user.email
+        password = request.data.get('current_password')
+
+        # If email is being changed, require password confirmation
+        if email_changed and not password:
+            return Response(
+                {"error": "Current password is required to change email"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if email_changed and not user.check_password(password):
+            return Response(
+                {"error": "Incorrect password"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            self.perform_update(serializer)
+            updated_fields = list(request.data.keys())
+            
+            # 🟢 Notification: Account updated
+            try:
+                message = f"Your account was updated. Changed fields: {', '.join(updated_fields)}"
+                Notification.objects.create(
+                    user=user,
+                    message=message
+                )
+                
+                # Additional email notification for sensitive changes
+                if email_changed:
+                    send_mail(
+                        "Email Address Changed",
+                        "Your account email was updated successfully",
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email]
+                    )
+            except Exception as notify_error:
+                logger.warning(f"Notification failed: {notify_error}")
+
+            return Response({
+                "message": "Account updated successfully",
+                "data": serializer.data
+            })
+
+        except Exception as e:
+            logger.error(f"Account update failed: {str(e)}")
+            return Response(
+                {"error": "Account update failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
