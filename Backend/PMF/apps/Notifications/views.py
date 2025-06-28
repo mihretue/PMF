@@ -9,6 +9,16 @@ class NotificationListView(generics.ListAPIView):
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user).order_by('-created_at')
 
+class NotificationDetailView(generics.RetrieveAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Notification.objects.all()
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        # Only allow users to access their own notifications
+        return Notification.objects.filter(user=self.request.user)
+
 class NotificationMarkReadView(generics.UpdateAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
